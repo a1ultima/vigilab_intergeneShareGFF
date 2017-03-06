@@ -55,7 +55,7 @@ DESCRIPTION:
 # }} 1 alternative 2 {{
 
 
-""" 
+""" PROTO-README (@TODO: after testing, incorporate into ./README.md)
 
 # TITLE: 
 	@@vigilab_intergeneShareGFF tool (for Kathrin)
