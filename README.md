@@ -13,9 +13,9 @@ Takes a GFF file, and extends the "START" and "END" fields of each gene row, to 
 	data out:
 		<the same GFF file, with new START and END fields, to incorporate the intergenic regions>
 
-**Here's a visual:**
+We want to share the intergenic regions available betwen tandemly occurring feature annotations of a specific type, e.g. exon/transcript/cds/etc., as specified by the input GFF file's row's column's fields: "START" and "END". Where "START" and "END" are measured in nucleotide basepairs, BPs, from left (0) to right (n) of a given chromosome. BPs are hereby represented as `.`, where `...` would be three BPs in tandem. We Then print out a new GFF file with modified "START" and "END" fields to aknowledge the resulting intergenic BP sharings by tandem features. 
 
-We want to share the intergenic regions (i.e. "...") between, say, transcripts in a GFF file. Then print out a new GFF file with modified "start" and "end" fields to aknowledge these sharings. The following sketch illustrates all possible scenarios we need to account for, and the `|` shows the precise location along the intergenic regions, where nucleotide basepairs (BPs, shown as `.`) are shared between tandem gene/transcript/exon/cds annotations of the input GFF file.
+The following sketch illustrates all possible scenarios we need to account for, and the `|` shows the precise location along the intergenic regions, where nucleotide basepairs (BPs, shown as `.`) are shared between tandem gene/transcript/exon/cds annotations of the input GFF file. By precise I mean a common multiple of BPs for 2 and 3 is used leaving no remainders in the example:
 
 | Case  | Diagram | Strands | Share  | Status  |
 |---|---|---|---|---|
