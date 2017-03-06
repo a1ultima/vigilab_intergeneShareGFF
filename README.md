@@ -1,7 +1,9 @@
 
 # vigilab_intergeneShareGFF tool (for Kathrin)
 
-## DESCRIPTION
+---
+
+## Description
 
 Takes a GFF file, and extends the "START" and "END" fields of each gene row, to include intergenic regions
 
@@ -52,7 +54,7 @@ Specifically, we want to distribute intergenic regions between tandem gene/trans
 
 `row 6: ...<===6===`
 
-
+---
 
 # REQUIREMENTS
  - Python3.5m
