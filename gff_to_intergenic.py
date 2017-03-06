@@ -3,7 +3,13 @@ import pdb
 
 """
 
-Kathrin's GFF file modifier. It takes ... 
+DEPRECATED: 
+
+	See: "vigilab_intergeneGFF" tool (i.e. "alternative 2") for new
+
+DESCRIPTION:
+
+	Kathrin's GFF file modifier. It takes ... 
 
 """
 
@@ -49,9 +55,9 @@ Kathrin's GFF file modifier. It takes ...
 # }} 1 alternative 2 {{
 
 
-"""
+""" Kathrin's vigilab_intergeneShareGFF tool for modifying a GFF input file (e.g. ./toy.gff) to output a file whose "transcript"-only rows have their "start" and "end" fields extended to include neighbouring intergenic regions (see: README.md for visual intuition)
 
-Description:
+@DESCRIPTION:
 	- So far we assume that the "types" we are interested in are "transcript" (filtering those rows accordingly)
 	- We also assume that there is only a single chromosome (for Kathrin there will be >1)
 
@@ -63,32 +69,40 @@ Nomenclature:
 
 Pipeline:
 
-	# 1. Read in the gff file
+	# 1. Read in the gff file  (@@read-gff)
 		# @DONE: see what I did for the tug-o-war and pulley-seq // @A: not relevant
 
-	# 2. Filter to keep only transcripts
+	# 2. Filter to keep only transcripts (@@filter-gff)
 		# @TODO: in Kathrin's case, it may need to be "cds" and not "transcript", change later
 		# @TODO: also in Kathrin's case, we need to be aware of the chromosome of each "cds"
 
-	# 3. Create gene objects: to share sequences between themselves (e.g. a.me) and their leftwards neighbour (e.g. a.left)
+	# 3. Create gene objects:  (@@gene_objects, @@gff_obj, @@gff_i_obj)
+		# e.g. a = to share sequences between themselves (e.g. a.me) and their leftwards neighbour (e.g. a.left)	
 
-	# 4. FOR loop to iterature a.share_neighbouring_seqs for all genes: we need to write their modified "start" and "end" fields to a file, rather than doing this in the gene objects we can create a separate function
+	# 4. FOR loop to iterature a.share_neighbouring_seqs for all genes: (@@share-neighbours)
 
 		# @TODO: shall we use a copy.deepcopy() in each iteration of the gene object contruction? I hope not, check memory usage
 
 	# 5. Write each gene's updated "start" and "end" fields to a new gff file
 
+		# for each a.me, write the modified "start" and "end" fields to a file (apropos a.me_new["start_intergene"], a.me_new["end_intergene"]), 
 
-
-
+		# ..rather than doing this in the gene objects (a.me) we can create a separate function to write each instance of a.me's data to the file in one go (i.e. we do not want to make a separate method for writing to file for each a. class)
 """
 
+#
+# Parse .gff file, filter according to "transcript" rows only (see: field: "type"), @TODO: later filter according to @kathrin's needs, e.g. "cds"?
+#
 
-
+# gene_to_field is where all the datarows/cols in the input gff are stored, 
 
 gene_to_field = {}  # keys: genes represented as 1..n, values: the 8 fields (cols) of a gff row
 
 gene_i = 0
+
+#
+# Reading file buffer 
+#
 
 with open("./toy.gff", "r") as fi:
 
