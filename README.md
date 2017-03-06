@@ -17,8 +17,7 @@ Takes a GFF file, and extends the "START" and "END" fields of each gene row, to 
 
 We want to share the intergenic regions (i.e. "...") between, say, transcripts in a GFF file. Then print out a new GFF file with modified "start" and "end" fields to aknowledge these sharings. The following sketch illustrates all possible scenarios we need to account for, and the `|` shows the precise location along the intergenic regions, where nucleotide basepairs (BPs, shown as `.`) are shared between tandem gene/transcript/exon/cds annotations of the input GFF file.
 
-
- | Case  | Diagram | Strands | Share  | Status  |
+| Case  | Diagram | Strands | Share  | Status  |
 |---|---|---|---|---|
 | Tail-to-Tail  | 5'(head)===>3'(tail)...\|...3'(tail)<===5'(head)  | (+,-)  | 1/2:1/2  | Tested  |
 | Head-to-Head  | 3'(tail)<===5'(head)...\|...5'(head)===>3'(tail)  | (+,-)  | 1/2:1/2  | Tested  |
