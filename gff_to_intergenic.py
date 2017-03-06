@@ -75,6 +75,7 @@ DESCRIPTION:
 
 	1. Read in the gff file  (@@read-gff)
 		- @DONE: see what I did for the tug-o-war and pulley-seq // @A: not relevant
+		- @DONE: Parse .gff file, filter according to "transcript" rows only (see: field: "type"), @TODO: later filter according to @kathrin's needs, e.g. "cds"?
 
 	2. Filter to keep only transcripts (@@filter-gff)
 		- @TODO: in Kathrin's case, it may need to be "cds" and not "transcript", change later
@@ -93,7 +94,7 @@ DESCRIPTION:
 """
 
 #
-# Parse .gff file, filter according to "transcript" rows only (see: field: "type"), @TODO: later filter according to @kathrin's needs, e.g. "cds"?
+# 1. Read in the gff file  (@@read-gff)
 #
 
 # gene_to_field is where all the datarows/cols in the input gff are stored, 
@@ -102,9 +103,7 @@ gene_to_field = {}  # keys: genes represented as 1..n, values: the 8 fields (col
 
 gene_i = 0
 
-#
-# Reading file buffer 
-#
+# Reading file buffer...
 
 with open("./toy.gff", "r") as fi:
 
@@ -152,7 +151,7 @@ with open("./toy.gff", "r") as fi:
 		}	
 		
 
-## @TEST: print the contents of gene_to_field back out in gff format
+## @TEST:@DONE: print the contents of gene_to_field back out in gff format
 
 # Note: I could have done this in lower-level langauge, but just in case kathrin wanted to do other things with it in future I wanted to wrap separate tasks in modular object form.
 
@@ -171,9 +170,9 @@ class gene_and_neighbours(object):
 		# e.g.  <--self.left-- --self.self--> --self.right-->
 		#
 		self.me = gene_to_field[gene_i]    # Parse the field data attributed to the neighbouring gene (whose "start" < self."end") 
-
-		print("\t\t\tSelf data successfully loaded from gene_to_field (dict) [into self.me]...")
-
+		self.my_id = gene_i
+		self.left_id = gene_i-1
+		
 		# @TODO: catch the edge case, where gene 1 has no left neighbour, and gene n has no right neighbour
 		# @TODO: deal with the cases where there are multiple chromosomes! 
 
@@ -188,8 +187,9 @@ class gene_and_neighbours(object):
 		#	print("Gene to the right of gene_i="+str(gene_i)+" does not exist, since gene_i is the furthest right in the chromosome, setting to None")
 		#	self.right = None
 		#else: 
-		#	self.right = gene_to_field[gene_i+1]
-	
+		#	self.right = gene_to_field[gene_i+1]	
+
+		print("\t\t\tSelf data successfully loaded from gene_to_field (dict) [into self.me]...")
 	
 	def share_neighbouring_seqs(self):
 
@@ -204,6 +204,14 @@ class gene_and_neighbours(object):
 		# @Note:@@factored-out-@intergenic_seq_diff: two reasons: (i) catch intergenic_seq_diff == -ve value errors, and (ii) reduce code redundancy, 
 		intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
 		print("\t\t\tTotal No. intergenic BPs between me's START field and left's END field: "+str(intergenic_seq_diff))
+
+		# @DEBUG:@TODO: If the a.left neighbour is a duplicate of a.me we get
+		# .. a -ve value. 
+		# 	- @Q: How can we deal with these duplicates best?
+		# 		- @A: Used an assertion statement that breaks the program for now
+		# 		- @A: @TODO: need to catch it and use as warning instead? 
+		# 	 // @LATEST:2017-03-06-@1929
+		assert intergenic_seq_diff>0, "Me (gene_i=%r) and Left neighbour (gene_i=%r) have a -ve tandem difference in integenic location in BPs (intergenic_seq_diff=%r)... we may be duplicates!" % (self.my_id, self.left_id, intergenic_seq_diff)
 
 		# @DONE: @LATEST-2017-03-06-1900: we factored out the intergenic_seq_diff
 
@@ -230,7 +238,6 @@ class gene_and_neighbours(object):
 			
 			# @TEST:@DONE: it ^, done: indeed correct orientation found and also correct sharing fractions
 
-			self.me
 
 		if ((self.left["c7_strand"]=="+") and (self.me["c7_strand"]=="+")):
 			print("\t\tTail-to-Head case encountered: 5'===left===>3'...intergenic...5'===me===>3'")
@@ -268,8 +275,6 @@ class gene_and_neighbours(object):
 
 			# @TEST: it^
 	
-		# @LATEST
-		# Share seqs with right, then take the share
 
 #
 # 3. Create gene objects: (see: @gene_objects, @gff_obj, @gff_i_obj)
@@ -284,7 +289,7 @@ class gene_and_neighbours(object):
 ## @TODO:@TEST: example case: Tail-to-Head: 5'(head)===>3'(tail)..|....5'(head)===>3'(tail)..
 
 ## @NOTES:
-# 	- There are multiple duplicate transcripts
+# 	- There are multiple duplicate transcripts, these cause intergeneic_seq_diff to be -ve, we need to catch -ve ones and throw an error
 
 # ...@LATEST-2017-03-06..
 
