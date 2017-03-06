@@ -43,6 +43,7 @@ In the input GFF file, the above data is represented as:
 Specifically, we want to distribute intergenic regions between tandem gene/transcript/exon/cds (@features), according to the following ratios: 1/2:1/2 and 1/3:2/3, inferred using the tandem gene's pairwise "strand" field configurations (see table above). And create a new GFF with modified "start" and "end" fields, which account for the, now shared, BPs (`.`) as shown above:
 
 `after: \/start    \/end`
+
 `row 1: ===1===>...`
 
 `row 2: ...<==2==....`
