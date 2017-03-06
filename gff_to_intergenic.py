@@ -153,7 +153,35 @@ with open("./toy.gff", "r") as fi:
 
 ## @TEST:@DONE: print the contents of gene_to_field back out in gff format
 
+#
+# 2. <add the pipeline step here @TODO:>
+#
+
+###########
+# Classes #
+###########
+
+
 # Note: I could have done this in lower-level langauge, but just in case kathrin wanted to do other things with it in future I wanted to wrap separate tasks in modular object form.
+
+#
+# Exceptions (error handling)
+#
+
+
+class Possible_duplicate_feature_found(Exception):
+	""" Handles one case where we can get -ve intergenic_seq_diff values, caused by duplicate features, e.g. "transcript", where the "start" and "end" fields are equal """
+
+	# @LATEST-2017-03-06-@2033 - @TODO: throw this error class when -ve intergenic_seq_diff occurs in the gene_and_neighbours() class, @TODO: make sure the gene_and_neighbours() class is later consistently capitalised, PEP8	
+	
+	pass
+
+
+#
+# Objects
+#
+
+
 
 class gene_and_neighbours(object):
 
@@ -211,7 +239,10 @@ class gene_and_neighbours(object):
 		# 		- @A: Used an assertion statement that breaks the program for now
 		# 		- @A: @TODO: need to catch it and use as warning instead? 
 		# 	 // @LATEST:2017-03-06-@1929
-		assert intergenic_seq_diff>0, "Me (gene_i=%r) and Left neighbour (gene_i=%r) have a -ve tandem difference in integenic location in BPs (intergenic_seq_diff=%r)... we may be duplicates!" % (self.my_id, self.left_id, intergenic_seq_diff)
+
+		if intergenic_seq_diff<0:
+			raise Possible_duplicate_feature_found("Me (gene_i=%r) and Left neighbour (gene_i=%r) have a -ve tandem difference in integenic location in BPs (intergenic_seq_diff=%r)... we may be duplicates!" % (self.my_id, self.left_id, intergenic_seq_diff))
+
 
 		# @DONE: @LATEST-2017-03-06-1900: we factored out the intergenic_seq_diff
 
