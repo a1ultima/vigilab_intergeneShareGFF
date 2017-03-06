@@ -74,24 +74,22 @@ DESCRIPTION:
 ** Pipeline: **
 
 	1. Read in the gff file  (@@read-gff)
-		# @DONE: see what I did for the tug-o-war and pulley-seq // @A: not relevant
+		- @DONE: see what I did for the tug-o-war and pulley-seq // @A: not relevant
 
 	2. Filter to keep only transcripts (@@filter-gff)
-		# @TODO: in Kathrin's case, it may need to be "cds" and not "transcript", change later
-		# @TODO: also in Kathrin's case, we need to be aware of the chromosome of each "cds"
+		- @TODO: in Kathrin's case, it may need to be "cds" and not "transcript", change later
+		- @TODO: also in Kathrin's case, we need to be aware of the chromosome of each "cds"
 
 	3. Create gene objects:  (@@gene_objects, @@gff_obj, @@gff_i_obj)
-		# e.g. a = to share sequences between themselves (e.g. a.me) and their leftwards neighbour (e.g. a.left)	
-
+		- e.g. a = to share sequences between themselves (e.g. a.me) and their leftwards neighbour (e.g. a.left)	
+		- We want to add two new fields to the gene_to_field dict, so that each gene has a "reg_start", and a "reg_end"
+			
 	4. FOR loop to iterature a.share_neighbouring_seqs for all genes: (@@share-neighbours)
-
-		# @TODO: shall we use a copy.deepcopy() in each iteration of the gene object contruction? I hope not, check memory usage
+		- @TODO: shall we use a copy.deepcopy() in each iteration of the gene object contruction? I hope not, check memory usage
 
 	5. Write each gene's updated "start" and "end" fields to a new gff file (@@write-gff)
-
-		# for each a.me, write the modified "start" and "end" fields to a file (apropos a.me_new["start_intergene"], a.me_new["end_intergene"]), 
-
-		# ..rather than doing this in the gene objects (a.me) we can create a separate function to write each instance of a.me's data to the file in one go (i.e. we do not want to make a separate method for writing to file for each a. class)
+		- for each a.me, write the modified "start" and "end" fields to a file (apropos a.me_new["start_intergene"], a.me_new["end_intergene"]), 
+		- ..rather than doing this in the gene objects (a.me) we can create a separate function to write each instance of a.me's data to the file in one go (i.e. we do not want to make a separate method for writing to file for each a. class)
 """
 
 #
@@ -165,7 +163,8 @@ class gene_and_neighbours(object):
 		
 		""" Parse the field data attributed to a single gene, and also its left/right neighbours (@TODO: do we keep this in the same file as the gene_to_field parser?) """
 
-		print("\tCreating myself and my leftward neighbour...")
+		print("\tGene_i: "+str(gene_i))
+		print("\t\tCreating myself (a.me) and my leftward neighbour (a.left)...")
 		
 		#
 		#       [     -1     ] [     0      ] [      +1     ] 
@@ -195,7 +194,7 @@ class gene_and_neighbours(object):
 
 		""" Determine which orientations the neighbouring seqs are in: head-to-head? head-to-tail? tail-to-head? tail-to-tail? """
 
-		print("\tAttempting to share sequences between me and my leftward neighbour...")
+		print("\t\tAttempting to share sequences between me and my leftward neighbour...")
 
 		if self.left==None:
 			# @TODO: make sure to deal with left-edge case
@@ -205,14 +204,20 @@ class gene_and_neighbours(object):
 			# @TODO: make sure to deal with right-edge case
 			pdb.set_trace()
 		
+		# @Note:@@factored-out-@intergenic_seq_diff: two reasons: (i) catch intergenic_seq_diff == -ve value errors, and (ii) reduce code redundancy, 
+		intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
+		print("\t\tTotal No. intergenic BPs between me's START field and left's END field: "+str(intergenic_seq_diff))
+
+
 		# Share seqs with left, Head-to-head (1/2 each), Head-to-tail (2/3 each)
 		# @TODO: can reduce code by doing an IF strand directions are not the same then share 50:50 ...
 		if ((self.left["c7_strand"]=="+") and (self.me["c7_strand"]=="-")) or ((self.left["c7_strand"]=="-") and (self.right["c7_strand"]=="+")):
 			print("\t\tHead-to-Head (or Tail-to-Tail) case encountered: 5'===left===>3'......3'<===me===5'")	
 			# @TODO: I assume the gff convention is to name the left-most chromosome pos as 0
 
-			intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
-			print("\t\t\tNo. intergenic BPs between me and left: "+str(intergenic_seq_diff))
+			## @NOTE: factored out into upper indent: see: @@factored-out-@intergenic_seq_diff
+			#intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
+			#print("\t\t\tNo. intergenic BPs between me and left: "+str(intergenic_seq_diff))
 			
 			fraction_me = (1/2)
 			print("\t\t\tFraction of BPs taken by me: "+str(fraction_me)) 
@@ -230,7 +235,7 @@ class gene_and_neighbours(object):
 			self.me
 
 		if ((self.left["c7_strand"]=="+") and (self.me["c7_strand"]=="+")):
-			print("\t\tHead-to-Tail case encountered: 5'===left===>3'...intergenic...5'===me===>3'")
+			print("\t\tTail-to-Head case encountered: 5'===left===>3'...intergenic...5'===me===>3'")
 
 			intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]	
 			print("\t\t\tNo. intergenic BPs between me and left: "+str(intergenic_seq_diff))
@@ -247,7 +252,7 @@ class gene_and_neighbours(object):
 			# @TEST: it^
 
 		if ((self.left["c7_strand"]=="-") and (self.me["c7_strand"]=="-")):
-			print("\t\tTail-to-Head case encountered: 3'<===left===5'...intergenic...3'<===me===5'")
+			print("\t\tHead-to-Tail case encountered: 3'<===left===5'...intergenic...3'<===me===5'")
 
 			intergenic_seq_diff = self.me["c4_start"] - self.end["c5_end"]
 			fraction_me = (1/3)
@@ -258,16 +263,25 @@ class gene_and_neighbours(object):
 		# @LATEST
 		# Share seqs with right, then take the share
 
+#
+# 3. Create gene objects: (see: @gene_objects, @gff_obj, @gff_i_obj)
+#
 
 
+## @DONE:@TEST: example case: Tail-to-Tail: 5'(head)===>3'(tail)...|...3'(tail)<===5'(head)..
+# ...All numbers consistent to manually calculated example (./toy.gff)
+#a = gene_and_neighbours( 2 )
+#a.share_neighbouring_seqs()
 
-# 3. We want to add two new fields to the gene_to_field dict, so that each gene has a "reg_start", and a "reg_end"
+## @TODO:@TEST: example case: Tail-to-Head: 5'(head)===>3'(tail)..|....5'(head)===>3'(tail)..
 
- 
+## @NOTES:
+# 	- There are multiple duplicate transcripts
 
-a = gene_and_neighbours( 2 )
+# ...@LATEST-2017-03-06..
 
-a.share_neighbouring_seqs()
+b = gene_and_neighbours( 8 )
+b.share_neighbouring_seqs()
 
 
 # }} 2 alternative 
