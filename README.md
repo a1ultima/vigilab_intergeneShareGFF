@@ -1,5 +1,5 @@
 
-# @@vigilab_intergeneShareGFF tool (for Kathrin)
+# vigilab_intergeneShareGFF tool (for Kathrin)
 
 ## DESCRIPTION
 
