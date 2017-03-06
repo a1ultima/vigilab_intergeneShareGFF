@@ -1,5 +1,5 @@
 
-# vigilab_intergeneShareGFF tool (for Kathrin)
+# VigiLab's intergeneShareGFF tool (for Kathrin)
 
 ---
 
