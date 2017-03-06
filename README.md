@@ -11,7 +11,8 @@ Takes a GFF file, and extends the "START" and "END" fields of each gene row, to 
 	data out:
 
 		<the same GFF file, with new START and END fields, to incorporate the intergenic regions>
-*Here's a visual:*
+
+**Here's a visual:**
 
 We want to share the intergenic regions (i.e. "...") between, say, transcripts in a GFF file. Then print out a new GFF file with modified "start" and "end" fields to aknowledge these sharings. 
 
