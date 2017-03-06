@@ -172,7 +172,7 @@ class gene_and_neighbours(object):
 		#
 		self.me = gene_to_field[gene_i]    # Parse the field data attributed to the neighbouring gene (whose "start" < self."end") 
 
-		print("\t\tSelf data loaded from gene_to_field (dict) [into self.me]...")
+		print("\t\t\tSelf data successfully loaded from gene_to_field (dict) [into self.me]...")
 
 		# @TODO: catch the edge case, where gene 1 has no left neighbour, and gene n has no right neighbour
 		# @TODO: deal with the cases where there are multiple chromosomes! 
@@ -182,32 +182,30 @@ class gene_and_neighbours(object):
 			self.left = None
 		else:
 			self.left = gene_to_field[gene_i-1]
-
-		if (gene_i+1) == (len(gene_to_field.keys())+1):
-			print("Gene to the right of gene_i="+str(gene_i)+" does not exist, since gene_i is the furthest right in the chromosome, setting to None")
-			self.right = None
-		else: 
-			self.right = gene_to_field[gene_i+1]
+		
+		## @DONE: no need to parse the right-neighbour, remove
+		#if (gene_i+1) == (len(gene_to_field.keys())+1):
+		#	print("Gene to the right of gene_i="+str(gene_i)+" does not exist, since gene_i is the furthest right in the chromosome, setting to None")
+		#	self.right = None
+		#else: 
+		#	self.right = gene_to_field[gene_i+1]
 	
 	
 	def share_neighbouring_seqs(self):
 
 		""" Determine which orientations the neighbouring seqs are in: head-to-head? head-to-tail? tail-to-head? tail-to-tail? """
 
-		print("\t\tAttempting to share sequences between me and my leftward neighbour...")
+		print("\t\tAttempting to share sequences between me (a.me) and my leftward neighbour...")
 
 		if self.left==None:
 			# @TODO: make sure to deal with left-edge case
 			pdb.set_trace()
-
-		if self.right==None:
-			# @TODO: make sure to deal with right-edge case
-			pdb.set_trace()
-		
+	
 		# @Note:@@factored-out-@intergenic_seq_diff: two reasons: (i) catch intergenic_seq_diff == -ve value errors, and (ii) reduce code redundancy, 
 		intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
-		print("\t\tTotal No. intergenic BPs between me's START field and left's END field: "+str(intergenic_seq_diff))
+		print("\t\t\tTotal No. intergenic BPs between me's START field and left's END field: "+str(intergenic_seq_diff))
 
+		# @DONE: @LATEST-2017-03-06-1900: we factored out the intergenic_seq_diff
 
 		# Share seqs with left, Head-to-head (1/2 each), Head-to-tail (2/3 each)
 		# @TODO: can reduce code by doing an IF strand directions are not the same then share 50:50 ...
@@ -237,8 +235,9 @@ class gene_and_neighbours(object):
 		if ((self.left["c7_strand"]=="+") and (self.me["c7_strand"]=="+")):
 			print("\t\tTail-to-Head case encountered: 5'===left===>3'...intergenic...5'===me===>3'")
 
-			intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]	
-			print("\t\t\tNo. intergenic BPs between me and left: "+str(intergenic_seq_diff))
+			## @NOTE: factored out into upper indent: see: @@factored-out-@intergenic_seq_diff
+			#intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
+			#print("\t\t\tNo. intergenic BPs between me and left: "+str(intergenic_seq_diff))
 
 			fraction_me = (2/3) # @TODO: check with Kathrin: 2/3 to 5' or 2/3 to the 3'?	
 			print("\t\t\tFraction of BPs taken by me: "+str(fraction_me)) 
@@ -254,10 +253,19 @@ class gene_and_neighbours(object):
 		if ((self.left["c7_strand"]=="-") and (self.me["c7_strand"]=="-")):
 			print("\t\tHead-to-Tail case encountered: 3'<===left===5'...intergenic...3'<===me===5'")
 
-			intergenic_seq_diff = self.me["c4_start"] - self.end["c5_end"]
+			## @NOTE: factored out into upper indent: see: @@factored-out-@intergenic_seq_diff
+			#intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
+			#print("\t\t\tNo. intergenic BPs between me and left: "+str(intergenic_seq_diff))
+			
 			fraction_me = (1/3)
+			print("\t\t\tFraction of BPs taken by me: "+str(fraction_me)) 
+
 			me_share = intergeneic_seq_diff * fraction_me 
+			print("\t\t\tMy share of BPs: "+str(me_share)) 
+
 			left_share = intergenic_seq_diff * (1-fraction_me)
+			print("\t\t\tLeft Neighbour share of BPs: "+str(left_share)) 
+
 			# @TEST: it^
 	
 		# @LATEST
