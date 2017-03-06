@@ -14,9 +14,9 @@ Takes a GFF file, and extends the "START" and "END" fields of each gene row, to 
 
 **Here's a visual:**
 
-We want to share the intergenic regions (i.e. "...") between, say, transcripts in a GFF file. Then print out a new GFF file with modified "start" and "end" fields to aknowledge these sharings. 
+We want to share the intergenic regions (i.e. "...") between, say, transcripts in a GFF file. Then print out a new GFF file with modified "start" and "end" fields to aknowledge these sharings. The following sketch illustrates all possible scenarios we need to account for, and the `|` shows the precise location along the intergenic regions, where nucleotide basepairs (BPs, shown as `.`) are shared between tandem gene/transcript/exon/cds annotations of the input GFF file.
 
-`===1====>...|...<==2==....|..<==3==...|...==4==>....|..====5====>...|...<===6===`
+`5'(head)===1====>3'(tail)...|...3'(tail)<==2==5'(head)....|..3'(tail)<==3==5'(head)...|...5'(head)==4==>3'(tail)....|..5'(head)====5====>3'(tail)...|...3'(tail)<===6===5'(head)`
 
 In the input GFF file, the above data is represented as:
 
@@ -34,7 +34,17 @@ In the input GFF file, the above data is represented as:
 
 `row 6: <===6===`
 
-But we want to aknowledge the shared intergeneic regions, so that intergenic regions are shared at a 1/2:1/2 and 1/3:2/3 ratio depending on the pairwise "strand" fields of tandem neighbouring transcripts, as such:
+Specifically, we want to distribute intergenic regions between tandem gene/transcript/exon/cds (@features), according to the following ratios: 1/2:1/2 and 1/3:2/3, inferred using the tandem gene's pairwise "strand" field configurations:
+
+ - Tail-to-Tail: 5'(head)===>3'(tail)...|...3'(tail)<===5'(head)
+ 
+ 
+ | Case  | Diagram | Strands | Share  | Status  |
+|---|---|---|---|---|
+| Tail-to-Tail  | 5'(head)===>3'(tail)...|...3'(tail)<===5'(head)  | (+,-)  | 1/2:1/2  | Tested  |
+| Head-to-Head  | 3'(tail)<===5'(head)...|...5'(head)===>3'(tail)  | (+,-)  | 1/2:1/2  | Tested  |
+| Tail-to-Head  | 5'(head)===>3'(tail)..|....5'(head)===>3'(tail)  | (+,+)  | 1/3:2/3  | Testing:@TODO  |
+| Head-to-Tail  | 3'(tail)<===5'(head)....|..3'(tail)<===5'(head)  |  (-,-) | 2/3:1/3  |  Developing:@TODO |
 
 `row 1: ===1===>...`
 
@@ -48,8 +58,7 @@ But we want to aknowledge the shared intergeneic regions, so that intergenic reg
 
 `row 6: ...<===6===`
 
-And create a new GFF with modified "start" and "end" fields, which account for 
-
+And create a new GFF with modified "start" and "end" fields, which account for the, now shared, BPs (`.`) as shown above.
 
 # REQUIREMENTS
  - Python3.5m
