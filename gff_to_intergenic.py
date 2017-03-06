@@ -55,27 +55,44 @@ Description:
 	- So far we assume that the "types" we are interested in are "transcript" (filtering those rows accordingly)
 	- We also assume that there is only a single chromosome (for Kathrin there will be >1)
 
+Nomenclature:
+	# @@gff: https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md,
+	# @TODO: is the .gff the correct version? (gff3 or gff2?)
+	# @DONE: make sure the #keys == #transcript rows
+	# @@GFF_Obj: "transcript" Filtered GFF object
+
+Pipeline:
+
+	# 1. Read in the gff file
+		# @DONE: see what I did for the tug-o-war and pulley-seq // @A: not relevant
+
+	# 2. Filter to keep only transcripts
+		# @TODO: in Kathrin's case, it may need to be "cds" and not "transcript", change later
+		# @TODO: also in Kathrin's case, we need to be aware of the chromosome of each "cds"
+
+	# 3. Create gene objects: to share sequences between themselves (e.g. a.me) and their leftwards neighbour (e.g. a.left)
+
+	# 4. FOR loop to iterature a.share_neighbouring_seqs for all genes: we need to write their modified "start" and "end" fields to a file, rather than doing this in the gene objects we can create a separate function
+
+		# @TODO: shall we use a copy.deepcopy() in each iteration of the gene object contruction? I hope not, check memory usage
+
+	# 5. Write each gene's updated "start" and "end" fields to a new gff file
+
+
+
+
 """
 
 
-# @TODO: see what I did for the tug-o-war and pulley-seq
 
-# @@gff: https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md,
-
-# 1. Read in the gff file
-# 2. Filter to keep only transcripts
-
-# @DONE: is the .gff the correct version? (gff3 or gff2?)
-
-# @DONE: make sure the #keys == #transcript rows
-
-# @@GFF_Obj: "transcript" Filtered GFF object
 
 gene_to_field = {}  # keys: genes represented as 1..n, values: the 8 fields (cols) of a gff row
 
 gene_i = 0
 
 with open("./toy.gff", "r") as fi:
+
+	print("Reading GFF file into: gene_to_field (dict), index as such: gene_to_field[gene_i], where gene_i is between 1-to-n...")
 	
 	while True:
 
@@ -129,13 +146,16 @@ class gene_and_neighbours(object):
 	def __init__(self, gene_i):  # see: @GFF_OBJ (@TODO: make the "see:" description point to file if this class file is in a separate file)
 		
 		""" Parse the field data attributed to a single gene, and also its left/right neighbours (@TODO: do we keep this in the same file as the gene_to_field parser?) """
+
+		print("\tCreating myself and my leftward neighbour...")
+		
 		#
 		#       [     -1     ] [     0      ] [      +1     ] 
 		# e.g.  <--self.left-- --self.self--> --self.right-->
 		#
 		self.me = gene_to_field[gene_i]    # Parse the field data attributed to the neighbouring gene (whose "start" < self."end") 
 
-		print("Self data loaded [self.me]...")
+		print("\t\tSelf data loaded from gene_to_field (dict) [into self.me]...")
 
 		# @TODO: catch the edge case, where gene 1 has no left neighbour, and gene n has no right neighbour
 		# @TODO: deal with the cases where there are multiple chromosomes! 
@@ -157,6 +177,8 @@ class gene_and_neighbours(object):
 
 		""" Determine which orientations the neighbouring seqs are in: head-to-head? head-to-tail? tail-to-head? tail-to-tail? """
 
+		print("\tAttempting to share sequences between me and my leftward neighbour...")
+
 		if self.left==None:
 			# @TODO: make sure to deal with left-edge case
 			pdb.set_trace()
@@ -168,31 +190,39 @@ class gene_and_neighbours(object):
 		# Share seqs with left, Head-to-head (1/2 each), Head-to-tail (2/3 each)
 		# @TODO: can reduce code by doing an IF strand directions are not the same then share 50:50 ...
 		if ((self.left["c7_strand"]=="+") and (self.me["c7_strand"]=="-")) or ((self.left["c7_strand"]=="-") and (self.right["c7_strand"]=="+")):
-			print("Head-to-Head (or Tail-to-Tail) case encountered: 5'===left===>3'...intergenic...3'<===me===5'")
-			
+			print("\t\tHead-to-Head (or Tail-to-Tail) case encountered: 5'===left===>3'......3'<===me===5'")	
 			# @TODO: I assume the gff convention is to name the left-most chromosome pos as 0
-			intergenic_seq_diff = self.me["c4_start"] - self.left["c4_end"]  # @TODO: code repetition, can factor out
+			intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
+			print("\t\t\tNo. intergenic BPs between me and left: "+str(intergenic_seq_diff))
+			
 			fraction_me = (1/2)
+			print("\t\t\tFraction of BPs taken by me: "+str(fraction_me)) 
+			
 			me_share   = intergenic_seq_diff * fraction_me
+			print("\t\t\tMy share of BPs: "+str(me_share)) 
+			
 			left_share = intergenic_seq_diff * (1-fraction_me)
+			print("\t\t\tLeft share of BPs: "+str(left_share)) 
 
 			# @LATEST:@TODO:add the shared intergenic positions to the self.me, or directly to file?
 			
-			# @TEST: it^
+			# @TEST:@DONE: it ^, done: indeed correct orientation found and also correct sharing fractions
+
+			self.me
 
 		if ((self.left["c7_strand"]=="+") and (self.me["c7_strand"]=="+")):
-			print("Head-to-Tail case encountered: 5'===left===>3'...intergenic...5'===me===>3'")
+			print("\t\tHead-to-Tail case encountered: 5'===left===>3'...intergenic...5'===me===>3'")
 
-			intergenic_seq_diff = self.me["c7_start"] - self.left["c7_end"]
+			intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]
 			fraction_me = (2/3) # @TODO: check with Kathrin: 2/3 to 5' or 2/3 to the 3'?
 			me_share   = intergenic_seq_diff * fraction_me
 			left_share = intergenic_seq_diff * (1-fraction_me)
 			# @TEST: it^
 
 		if ((self.left["c7_strand"]=="-") and (self.me["c7_strand"]=="-")):
-			print("Tail-to-Head case encountered: 3'<===left===5'...intergenic...3'<===me===5'")
+			print("\t\tTail-to-Head case encountered: 3'<===left===5'...intergenic...3'<===me===5'")
 
-			intergenic_seq_diff = self.me["c7_start"] - self.end["c7_end"]
+			intergenic_seq_diff = self.me["c4_start"] - self.end["c5_end"]
 			fraction_me = (1/3)
 			me_share = intergeneic_seq_diff * fraction_me 
 			left_share = intergenic_seq_diff * (1-fraction_me)
