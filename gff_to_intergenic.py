@@ -5,11 +5,11 @@ import pdb
 
 DEPRECATED: 
 
-	See: "vigilab_intergeneGFF" tool (i.e. "alternative 2") for new
+	See: "@vigilab_intergeneGFF" tool (i.e. "alternative 2") for latest one
 
 DESCRIPTION:
 
-	Kathrin's GFF file modifier. It takes ... 
+	... GFF file modifier for Kathrin. It takes ... 
 
 """
 
@@ -55,35 +55,39 @@ DESCRIPTION:
 # }} 1 alternative 2 {{
 
 
-""" Kathrin's vigilab_intergeneShareGFF tool for modifying a GFF input file (e.g. ./toy.gff) to output a file whose "transcript"-only rows have their "start" and "end" fields extended to include neighbouring intergenic regions (see: README.md for visual intuition)
+""" 
 
-@DESCRIPTION:
-	- So far we assume that the "types" we are interested in are "transcript" (filtering those rows accordingly)
-	- We also assume that there is only a single chromosome (for Kathrin there will be >1)
+# TITLE: 
+	@@vigilab_intergeneShareGFF tool (for Kathrin)
 
-Nomenclature:
+# DESCRIPTION:
+	for Kathrin to modify a GFF input file (e.g. ./toy.gff) to output a file whose "transcript"-only rows have their "start" and "end" fields extended to include neighbouring intergenic regions (see: README.md for visual intuition)
+	- So far we assume that the "types" we are interested in are "transcript" (filtering those rows accordingly) // @TODO: change later to something Kathrin wants: e.g. "cds"?
+	- We also assume that there is only a single chromosome (for Kathrin there will be >1) // @TODO: later change to aknowledge >1 chromosomes
+
+** Nomenclature: **
 	# @@gff: https://github.com/The-Sequence-Ontology/Specifications/blob/master/gff3.md,
 	# @TODO: is the .gff the correct version? (gff3 or gff2?)
 	# @DONE: make sure the #keys == #transcript rows
 	# @@GFF_Obj: "transcript" Filtered GFF object
 
-Pipeline:
+** Pipeline: **
 
-	# 1. Read in the gff file  (@@read-gff)
+	1. Read in the gff file  (@@read-gff)
 		# @DONE: see what I did for the tug-o-war and pulley-seq // @A: not relevant
 
-	# 2. Filter to keep only transcripts (@@filter-gff)
+	2. Filter to keep only transcripts (@@filter-gff)
 		# @TODO: in Kathrin's case, it may need to be "cds" and not "transcript", change later
 		# @TODO: also in Kathrin's case, we need to be aware of the chromosome of each "cds"
 
-	# 3. Create gene objects:  (@@gene_objects, @@gff_obj, @@gff_i_obj)
+	3. Create gene objects:  (@@gene_objects, @@gff_obj, @@gff_i_obj)
 		# e.g. a = to share sequences between themselves (e.g. a.me) and their leftwards neighbour (e.g. a.left)	
 
-	# 4. FOR loop to iterature a.share_neighbouring_seqs for all genes: (@@share-neighbours)
+	4. FOR loop to iterature a.share_neighbouring_seqs for all genes: (@@share-neighbours)
 
 		# @TODO: shall we use a copy.deepcopy() in each iteration of the gene object contruction? I hope not, check memory usage
 
-	# 5. Write each gene's updated "start" and "end" fields to a new gff file
+	5. Write each gene's updated "start" and "end" fields to a new gff file (@@write-gff)
 
 		# for each a.me, write the modified "start" and "end" fields to a file (apropos a.me_new["start_intergene"], a.me_new["end_intergene"]), 
 
@@ -206,6 +210,7 @@ class gene_and_neighbours(object):
 		if ((self.left["c7_strand"]=="+") and (self.me["c7_strand"]=="-")) or ((self.left["c7_strand"]=="-") and (self.right["c7_strand"]=="+")):
 			print("\t\tHead-to-Head (or Tail-to-Tail) case encountered: 5'===left===>3'......3'<===me===5'")	
 			# @TODO: I assume the gff convention is to name the left-most chromosome pos as 0
+
 			intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
 			print("\t\t\tNo. intergenic BPs between me and left: "+str(intergenic_seq_diff))
 			
@@ -216,7 +221,7 @@ class gene_and_neighbours(object):
 			print("\t\t\tMy share of BPs: "+str(me_share)) 
 			
 			left_share = intergenic_seq_diff * (1-fraction_me)
-			print("\t\t\tLeft share of BPs: "+str(left_share)) 
+			print("\t\t\tLeft Neighbour share of BPs: "+str(left_share)) 
 
 			# @LATEST:@TODO:add the shared intergenic positions to the self.me, or directly to file?
 			
@@ -227,10 +232,18 @@ class gene_and_neighbours(object):
 		if ((self.left["c7_strand"]=="+") and (self.me["c7_strand"]=="+")):
 			print("\t\tHead-to-Tail case encountered: 5'===left===>3'...intergenic...5'===me===>3'")
 
-			intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]
-			fraction_me = (2/3) # @TODO: check with Kathrin: 2/3 to 5' or 2/3 to the 3'?
+			intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]	
+			print("\t\t\tNo. intergenic BPs between me and left: "+str(intergenic_seq_diff))
+
+			fraction_me = (2/3) # @TODO: check with Kathrin: 2/3 to 5' or 2/3 to the 3'?	
+			print("\t\t\tFraction of BPs taken by me: "+str(fraction_me)) 
+
 			me_share   = intergenic_seq_diff * fraction_me
+			print("\t\t\tMy share of BPs: "+str(me_share)) 
+
 			left_share = intergenic_seq_diff * (1-fraction_me)
+			print("\t\t\tLeft Neighbour share of BPs: "+str(left_share)) 
+
 			# @TEST: it^
 
 		if ((self.left["c7_strand"]=="-") and (self.me["c7_strand"]=="-")):
