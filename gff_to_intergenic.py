@@ -97,6 +97,24 @@ DESCRIPTION:
 # 1. Read in the gff file  (@@read-gff)
 #
 
+#
+# 2. Filter to keep only transcripts (@@filter-gff)
+#
+
+# @TODO: wrap into a function(), [e.g. def readGffFile()] for now, here's the doctring: 
+
+""" readGffFile (@@readGffFile, @read-gff, @filter-gff)
+
+Description:
+	- reads a .gff input file, then filters datarows so only those matching the "feature_type" arg are kept.
+	- e.g. ./toy.gff
+Args:
+	- feature_type (str) -- filters incoming .gff file to keep only rows whose field "type" matches feature_type, e.g."transcript" (default)
+
+
+"""
+
+
 # gene_to_field is where all the datarows/cols in the input gff are stored, 
 
 gene_to_field = {}  # keys: genes represented as 1..n, values: the 8 fields (cols) of a gff row
@@ -221,6 +239,19 @@ def assertNoDuplicateFeatures(intergenic_seq_diff, gffFeatureObj):
 #
 
 class gene_and_neighbours(object):
+	
+	""" @TODO: rename to: "@@gffFeatureObj"
+	
+	Description:
+		- Object for handling incoming gff input file data, ..
+		..representing a row of data whose type is specified as "transcript" @TODO:change so that type can be specified through some input argument to the class instantiation, e.g. "self.feature_type". 
+	
+	Args:
+		- self.gene_i (int) -- number that indexes feature_type-filtered data row of: @gene_to_field, as in gene_to_field[gene_i], e.g. gene_i = 2, where 2 is te 2nd datarow of gene_to_field
+
+
+ 	""" 
+
 
 	# @TODO:run a test to ensure the class of the gene_i_to_fields is an indexed @GFF_OBJ, e.g. gene_to_fields[i], where i enumerate 0:len(gene_to_fields)
 	
@@ -278,10 +309,14 @@ class gene_and_neighbours(object):
 		# 		- @A: @TODO: need to catch it and use as warning instead? 
 		# 	 // @LATEST:2017-03-06-@1929
 
+		# @DuplicateFeatureError handling, to test if me and left neighbour are the same feature (duplicated)
 		print("\t"*4+"Checking for bugs...")
-
-		# Error handling, to test if me and left neighbour are the same feature (duplicated)
-		assertNoDuplicateFeatures(intergenic_seq_diff, self) # error logs written to: ./log.txt
+		try:
+			assertNoDuplicateFeatures(intergenic_seq_diff, self) # error logs written to: ./log.txt
+		except DuplicateFeatureError as err:
+			print(err.message) 
+			print("\t"*5+"...Skipping gene_i: %r" % gene_i)
+			pass  # @TODO: instead of skipping, it currently: carries on processing as if no err was encountered
 
 		# @DONE: @LATEST-2017-03-06-1900: we factored out the intergenic_seq_diff
 
