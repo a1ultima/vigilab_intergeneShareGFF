@@ -161,15 +161,13 @@ with open("./toy.gff", "r") as fi:
 # Classes #
 ###########
 
-
-# Note: I could have done this in lower-level langauge, but just in case kathrin wanted to do other things with it in future I wanted to wrap separate tasks in modular object form.
+# Note: I could have done this in lower-level langauge, but just in case Kathrin wanted to do other things with it in future I wanted to wrap separate tasks in modular object form.
 
 #
 # Exceptions & Errors (error handling)
 #
 
-class IntergenicSeqDiffImpossible(Exception):
-	
+class IntergenicSeqDiffImpossible(Exception):	
 	""" Base class for exceptions involving negative (-ve) values encountered for..
 		..intergenic_seq_diff variable, we never expect -ve values.
 
@@ -177,36 +175,43 @@ class IntergenicSeqDiffImpossible(Exception):
 	# @LATEST-2017-03-06:@2033 - @TODO: throw this error class when -ve intergenic_seq_diff occurs in the gene_and_neighbours() class, @TODO: make sure the gene_and_neighbours() class is later consistently capitalised, PEP8	
 	pass
 
-class DuplicateFeature(IntergenicSeqDiffImpossible):
-	"""Exception raised when we think the InterGenicSeqDiffImpossible Exception flags a duplicated feature.
+class DuplicateFeatureError(IntergenicSeqDiffImpossible):
+	""" Error raised when we think the InterGenicSeqDiffImpossible Exception flags a duplicated feature.
 		
 		Attributes:
 			expression -- input expression in which the error occurred
 			message -- explanation of the error
 	"""
 	
-    def __init__(self, expression, message):
-        #self.expression = expression
-        #self.message = message
-	# @TODO: replace ^ and ^^ (above two lines) to have the following error message instead
-	self.expression = expression
-	self.message = "\t"*5+"Me (gene_i=%r) and Left neighbour (gene_i=%r) have a -ve tandem difference in integenic location in BPs (intergenic_seq_diff=%r)... we may be duplicates! Writing to file... \n" % (self.my_id, self.left_id, intergenic_seq_diff)
-	
-	# @DONE: add some error logs to "./log.txt" 
-	with open("./log.txt", "a") as fo_log:
-		fo_log.write(self.message)
+	# def __init__(self, expression, message):  # @VANILLA:@TODO:later maybe also allow for expression and message, but need to think more about how to work it 
+		#self.expression = expression
+		#self.message = message
+	def __init__(self, message):  # @VANILLA:@TODO:later maybe also allow for expression, but need to think more about how to work it 
+		# @TODO: replace ^ and ^^ (above two lines) to have the following error message instead
+		self.message = message # e.g. something like: "\t"*5+"Me (gene_i=%r) and Left neighbour (gene_i=%r) have a -ve tandem difference in integenic location in BPs (intergenic_seq_diff=%r)... we may be duplicates! Writing to file... \n" % (self.my_id, self.left_id, intergenic_seq_diff)
+		# @DONE: add some error logs to "./log.txt" 
+		with open("./log.txt", "a") as fo_log:
+			fo_log.write(self.message)
 
 #
 # Error handlers 
 #
 def assertNoDuplicateFeatures(intergenic_seq_diff, gffFeatureObj):
-	""" Handles one case where we can get -ve intergenic_seq_diff values, is caused by duplicate features..
+	""" Error Handling Function for checking whether or not an encounter with -ve intergenic_seq_diff values is caused specifically by duplicate features..
 		..e.g. "transcript", where the "start" and "end" fields are equal.
+
+	ARG:
+		- gffFeatureObj (class) -- e.g. a = gene_and_neighbours() class instance
+
 	"""
 	
+	gene_i_me = gffFeatureObj.my_id # e.g. 8 (int), in: gene_and_neighbours(8)
+	gene_i_left = gffFeatureObj.left_id # e.g. 7 (int), ^ since: gene_i_left = gene_i_me - 1
+
 	if intergenic_seq_diff<0:  # -ve values of intergenic_seq_diff are impossible	@LATEST:@2221
 		if ((gffFeatureObj.me["c4_start"]==gffFeatureObj.left["c4_start"]) and (gffFeatureObj.me["c5_end"]==gffFeatureObj.left["c5_end"])): # the "start" and "end" fields of me and left are equal, we are the same (I hope) @TODO:more throrough testing by comparing equality of all fields)				
-			raise DuplicateFeature  # @LATEST:2017-03-06:@2212:@TODO:consistent naming
+			raise DuplicateFeatureError("\t"*5+"Me (gene_i=%r) and Left neighbour (gene_i=%r) have a -ve tandem difference in integenic location in BPs (intergenic_seq_diff=%r)... we may be duplicates! Writing to file... \n" % (gene_i_me, gene_i_left, intergenic_seq_diff))
+ # @LATEST:2017-03-06:@2212:@TODO:consistent naming
 		else:
 			raise IntergenicSeqDiffImpossible  
 	else:
@@ -276,7 +281,7 @@ class gene_and_neighbours(object):
 		print("\t"*4+"Checking for bugs...")
 
 		# Error handling, to test if me and left neighbour are the same feature (duplicated)
-		assertNoDuplicateFeatures(intergenic_seq_diff, self)
+		assertNoDuplicateFeatures(intergenic_seq_diff, self) # error logs written to: ./log.txt
 
 		# @DONE: @LATEST-2017-03-06-1900: we factored out the intergenic_seq_diff
 
