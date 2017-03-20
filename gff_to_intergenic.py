@@ -354,7 +354,7 @@ class gene_and_neighbours(object):
 		if ((self.left["c7_strand"]=="+") and (self.me["c7_strand"]=="+")):
 			print("\t\tTail-to-Head case encountered: 5'===left===>3'...intergenic...5'===me===>3'")
 
-			pdb.set_trace() # @ANDY-and-Luke: python tutorial: how to debug
+			pdb.set_trace() # @ANDY-and-Luke: python tutorial: how to debug // @LukePDBTutorial:@DATE:@2017-03-20
 
 			## @NOTE: factored out into upper indent: see: @@factored-out-@intergenic_seq_diff
 			#intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
@@ -369,7 +369,7 @@ class gene_and_neighbours(object):
 			left_share = intergenic_seq_diff * (1-fraction_me)
 			print("\t\t\tLeft Neighbour share of BPs: "+str(left_share)) 
 
-			# @TEST: it^
+			# @TEST: it^i  
 
 		if ((self.left["c7_strand"]=="-") and (self.me["c7_strand"]=="-")):
 			print("\t\tHead-to-Tail case encountered: 3'<===left===5'...intergenic...3'<===me===5'")
