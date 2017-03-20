@@ -305,8 +305,8 @@ class gene_and_neighbours(object):
 		# @DEBUG:@TODO: If the a.left neighbour is a duplicate of a.me we get
 		# .. a -ve value. 
 		# 	- @Q: How can we deal with these duplicates best?
-		# 		- @A: Used an assertion statement that breaks the program for now
-		# 		- @A: @TODO: need to catch it and use as warning instead? 
+		# 		- @UNDONE:@A: Used an assertion statement that breaks the program for now
+		# 		- @DONE:@A: @TODO: need to catch it and use as warning instead? 
 		# 	 // @LATEST:2017-03-06-@1929
 
 		# @DuplicateFeatureError handling, to test if me and left neighbour are the same feature (duplicated)
@@ -316,11 +316,15 @@ class gene_and_neighbours(object):
 		except DuplicateFeatureError as err:
 			print(err.message) 
 			print("\t"*5+"...Skipping gene_i: %r" % gene_i)
-			pass  # @TODO: instead of skipping, it currently: carries on processing as if no err was encountered
+			pass  # @TODO: better to skip it // instead of skipping, it currently: carries on processing as if no err was encountered
 
 		# @DONE: @LATEST-2017-03-06-1900: we factored out the intergenic_seq_diff
 
-		# Share seqs with left, Head-to-head (1/2 each), Head-to-tail (2/3 each)
+		#############################################
+		# CASE 1 & 2: Tail-to-Tail and Head-to-Head #
+		#############################################
+
+		# Share seqs with left, Head-to-head (1/2 each), tail-to-tail (2/3 each)
 		# @TODO: can reduce code by doing an IF strand directions are not the same then share 50:50 ...
 		if ((self.left["c7_strand"]=="+") and (self.me["c7_strand"]=="-")) or ((self.left["c7_strand"]=="-") and (self.right["c7_strand"]=="+")):
 			print("\t\tHead-to-Head (or Tail-to-Tail) case encountered: 5'===left===>3'......3'<===me===5'")	
@@ -343,9 +347,14 @@ class gene_and_neighbours(object):
 			
 			# @TEST:@DONE: it ^, done: indeed correct orientation found and also correct sharing fractions
 
+		########################
+		# CASE 3: Tail-to-head #
+		########################
 
 		if ((self.left["c7_strand"]=="+") and (self.me["c7_strand"]=="+")):
 			print("\t\tTail-to-Head case encountered: 5'===left===>3'...intergenic...5'===me===>3'")
+
+			pdb.set_trace() # @ANDY-and-Luke: python tutorial: how to debug
 
 			## @NOTE: factored out into upper indent: see: @@factored-out-@intergenic_seq_diff
 			#intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
