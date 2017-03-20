@@ -19,10 +19,10 @@ The following sketch illustrates all possible scenarios we need to account for, 
 
 | Case  | Diagram | Strands | Share  | Status  |
 |---|---|---|---|---|
-| Tail-to-Tail  | 5'(head)===>3'(tail)...\|...3'(tail)<===5'(head)  | (+,-)  | 1/2:1/2  | Tested  |
-| Head-to-Head  | 3'(tail)<===5'(head)...\|...5'(head)===>3'(tail)  | (-,+)  | 1/2:1/2  | Tested  |
-| Tail-to-Head  | 5'(head)===>3'(tail)..\|....5'(head)===>3'(tail)  | (+,+)  | 1/3:2/3  | Testing:@TODO  |
-| Head-to-Tail  | 3'(tail)<===5'(head)....\|..3'(tail)<===5'(head)  |  (-,-) | 2/3:1/3  |  Developing:@TODO |
+| 1. Tail-to-Tail  | 5'(head)===>3'(tail)...\|...3'(tail)<===5'(head)  | (+,-)  | 1/2:1/2  | Tested  |
+| 2. Head-to-Head  | 3'(tail)<===5'(head)...\|...5'(head)===>3'(tail)  | (-,+)  | 1/2:1/2  | Tested  |
+| 3. Tail-to-Head  | 5'(head)===>3'(tail)..\|....5'(head)===>3'(tail)  | (+,+)  | 1/3:2/3  | Testing:@TODO  |
+| 4. Head-to-Tail  | 3'(tail)<===5'(head)....\|..3'(tail)<===5'(head)  |  (-,-) | 2/3:1/3  |  Developing:@TODO |
 
 In the input GFF file, the above data is represented as:
 
