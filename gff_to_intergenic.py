@@ -169,6 +169,8 @@ with open("./toy.gff", "r") as fi:
 		}	
 		
 
+
+
 ## @TEST:@DONE: print the contents of gene_to_field back out in gff format
 
 #
@@ -267,6 +269,7 @@ class gene_and_neighbours(object):
 		# e.g.  <--self.left-- --self.self--> --self.right-->
 		#
 		self.me = gene_to_field[gene_i]    # Parse the field data attributed to the neighbouring gene (whose "start" < self."end") 
+
 		self.my_id = gene_i
 		self.left_id = gene_i-1
 		
@@ -354,7 +357,7 @@ class gene_and_neighbours(object):
 		if ((self.left["c7_strand"]=="+") and (self.me["c7_strand"]=="+")):
 			print("\t\tTail-to-Head case encountered: 5'===left===>3'...intergenic...5'===me===>3'")
 
-			pdb.set_trace() # @ANDY-and-Luke: python tutorial: how to debug
+			pdb.set_trace() # GWSUNIT00000016001 // @ANDY-and-Luke: python tutorial: how to debug // @Luke PDBTutorial:@DATE:@2017-03-20
 
 			## @NOTE: factored out into upper indent: see: @@factored-out-@intergenic_seq_diff
 			#intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
@@ -369,7 +372,7 @@ class gene_and_neighbours(object):
 			left_share = intergenic_seq_diff * (1-fraction_me)
 			print("\t\t\tLeft Neighbour share of BPs: "+str(left_share)) 
 
-			# @TEST: it^
+			# @TEST: it^i  
 
 
 		########################
@@ -411,9 +414,10 @@ class gene_and_neighbours(object):
 ## @NOTES:
 # 	-@TODO: catch the error, throw it to use as msg, then skip the error-causing case // @DONE: catch errors, and just "pass" as if error was not there // There are multiple duplicate transcripts, these cause intergeneic_seq_diff to be -ve, we need to catch -ve ones and throw an error
 
-# @LATEST:@2017-03-20:@2227 // ...@LATEST-2017-03-06..
+# ...@LATEST-2017-03-06.. @LATEST-2017-03-20
 
-b = gene_and_neighbours( 8 )
+b = gene_and_neighbours( 8 )  # @Q: what does this do // @A: see: gene_and_share
+
 b.share_neighbouring_seqs()
 
 
