@@ -360,7 +360,7 @@ class gene_and_neighbours(object):
 			#intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
 			#print("\t\t\tNo. intergenic BPs between me and left: "+str(intergenic_seq_diff))
 
-			fraction_me = (2/3) # @TODO: check with Kathrin: 2/3 to 5' or 2/3 to the 3'?	
+			fraction_me = (2/3) # @DONE: check with Kathrin: 2/3 to 5' or 2/3 to the 3'?	
 			print("\t\t\tFraction of BPs taken by me: "+str(fraction_me)) 
 
 			me_share   = intergenic_seq_diff * fraction_me
@@ -370,6 +370,11 @@ class gene_and_neighbours(object):
 			print("\t\t\tLeft Neighbour share of BPs: "+str(left_share)) 
 
 			# @TEST: it^
+
+
+		########################
+		# CASE 4: Tail-to-head #
+		########################
 
 		if ((self.left["c7_strand"]=="-") and (self.me["c7_strand"]=="-")):
 			print("\t\tHead-to-Tail case encountered: 3'<===left===5'...intergenic...3'<===me===5'")
@@ -385,10 +390,11 @@ class gene_and_neighbours(object):
 			print("\t\t\tMy share of BPs: "+str(me_share)) 
 
 			left_share = intergenic_seq_diff * (1-fraction_me)
-			print("\t\t\tLeft Neighbour share of BPs: "+str(left_share)) 
+			print("\t\t\tLeft Neighbour share of BPs: "+str(left_share))
 
-			# @TEST: it^
-	
+			pdb.set_trace() # @2227 // @TODO:REMOVE 
+
+			# @TEST: it^ // @LATEST:2017-03-20-@2225
 
 #
 # 3. Create gene objects: (see: @gene_objects, @gff_obj, @gff_i_obj)
@@ -403,9 +409,9 @@ class gene_and_neighbours(object):
 ## @TODO:@TEST: example case: Tail-to-Head: 5'(head)===>3'(tail)..|....5'(head)===>3'(tail)..
 
 ## @NOTES:
-# 	- There are multiple duplicate transcripts, these cause intergeneic_seq_diff to be -ve, we need to catch -ve ones and throw an error
+# 	-@TODO: catch the error, throw it to use as msg, then skip the error-causing case // @DONE: catch errors, and just "pass" as if error was not there // There are multiple duplicate transcripts, these cause intergeneic_seq_diff to be -ve, we need to catch -ve ones and throw an error
 
-# ...@LATEST-2017-03-06..
+# @LATEST:@2017-03-20:@2227 // ...@LATEST-2017-03-06..
 
 b = gene_and_neighbours( 8 )
 b.share_neighbouring_seqs()
