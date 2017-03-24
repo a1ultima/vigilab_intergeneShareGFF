@@ -16,6 +16,8 @@ DESCRIPTION:
 
 ### alternative 1 {{
 
+# oops
+#lol
 #
 # 1. Read in the file
 #
@@ -357,7 +359,10 @@ class gene_and_neighbours(object):
 		if ((self.left["c7_strand"]=="+") and (self.me["c7_strand"]=="+")):
 			print("\t\tTail-to-Head case encountered: 5'===left===>3'...intergenic...5'===me===>3'")
 
-			pdb.set_trace() # GWSUNIT00000016001 // @ANDY-and-Luke: python tutorial: how to debug // @Luke PDBTutorial:@DATE:@2017-03-20
+			print("\n\n\n\n Yay I found a tail-to-head \n\n\n\n\n\n")
+
+
+			pdb.set_trace() # @ANDY-and-Luke: python tutorial: how to debug
 
 			## @NOTE: factored out into upper indent: see: @@factored-out-@intergenic_seq_diff
 			#intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
@@ -376,7 +381,7 @@ class gene_and_neighbours(object):
 
 
 		########################
-		# CASE 4: Tail-to-head #
+		# CASE 4: Head-to-tail #
 		########################
 
 		if ((self.left["c7_strand"]=="-") and (self.me["c7_strand"]=="-")):
@@ -394,8 +399,6 @@ class gene_and_neighbours(object):
 
 			left_share = intergenic_seq_diff * (1-fraction_me)
 			print("\t\t\tLeft Neighbour share of BPs: "+str(left_share))
-
-			pdb.set_trace() # @2227 // @TODO:REMOVE 
 
 			# @TEST: it^ // @LATEST:2017-03-20-@2225
 
@@ -417,9 +420,7 @@ class gene_and_neighbours(object):
 # ...@LATEST-2017-03-06.. @LATEST-2017-03-20
 
 b = gene_and_neighbours( 7 )  # @Q: what does this do // @A: see: gene_and_share
-
-
-#b.share_neighbouring_seqs()
+b.share_neighbouring_seqs()
 
 
 # }} 2 alternative 
