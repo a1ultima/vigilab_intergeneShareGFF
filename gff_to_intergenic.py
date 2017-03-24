@@ -416,9 +416,10 @@ class gene_and_neighbours(object):
 
 # ...@LATEST-2017-03-06.. @LATEST-2017-03-20
 
-b = gene_and_neighbours( 8 )  # @Q: what does this do // @A: see: gene_and_share
+b = gene_and_neighbours( 7 )  # @Q: what does this do // @A: see: gene_and_share
 
-b.share_neighbouring_seqs()
+
+#b.share_neighbouring_seqs()
 
 
 # }} 2 alternative 
