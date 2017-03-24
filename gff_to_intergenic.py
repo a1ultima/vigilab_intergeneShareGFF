@@ -16,8 +16,6 @@ DESCRIPTION:
 
 ### alternative 1 {{
 
-# oops
-#lol
 #
 # 1. Read in the file
 #
