@@ -254,7 +254,6 @@ class gene_and_neighbours(object):
 
  	""" 
 
-
 	# @TODO:run a test to ensure the class of the gene_i_to_fields is an indexed @GFF_OBJ, e.g. gene_to_fields[i], where i enumerate 0:len(gene_to_fields)
 	
 	def __init__(self, gene_i):  # see: @GFF_OBJ (@TODO: make the "see:" description point to file if this class file is in a separate file)
@@ -299,6 +298,7 @@ class gene_and_neighbours(object):
 
 		if self.left==None:
 			# @TODO: make sure to deal with left-edge case
+			print("\t\t\tOops, looks like we have no left neighbour!")
 			pdb.set_trace()
 	
 		# @Note:@@factored-out-@intergenic_seq_diff: two reasons: (i) catch intergenic_seq_diff == -ve value errors, and (ii) reduce code redundancy, 
@@ -324,62 +324,39 @@ class gene_and_neighbours(object):
 		# @DONE: @LATEST-2017-03-06-1900: we factored out the intergenic_seq_diff
 
 		#############################################
-		# CASE 1 & 2: Tail-to-Tail and Head-to-Head #
+		# CASE 1 & 2: Tail-to-Tail and Head-to-Head #  ===>...|...<=== OR <===...|...===>
 		#############################################
 
 		# Share seqs with left, Head-to-head (1/2 each), tail-to-tail (2/3 each)
 		# @TODO: can reduce code by doing an IF strand directions are not the same then share 50:50 ...
-		if ((self.left["c7_strand"]=="+") and (self.me["c7_strand"]=="-")) or ((self.left["c7_strand"]=="-") and (self.right["c7_strand"]=="+")):
+		if ((self.left["c7_strand"]=="+") and (self.me["c7_strand"]=="-")) or ((self.left["c7_strand"]=="-") and (self.me["c7_strand"]=="+")):
 			print("\t\tHead-to-Head (or Tail-to-Tail) case encountered: 5'===left===>3'......3'<===me===5'")	
 			# @TODO: I assume the gff convention is to name the left-most chromosome pos as 0
-
 			## @NOTE: factored out into upper indent: see: @@factored-out-@intergenic_seq_diff
 			#intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
 			#print("\t\t\tNo. intergenic BPs between me and left: "+str(intergenic_seq_diff))
-			
 			fraction_me = (1/2)
-			print("\t\t\tFraction of BPs taken by me: "+str(fraction_me)) 
 			
-			me_share   = intergenic_seq_diff * fraction_me
-			print("\t\t\tMy share of BPs: "+str(me_share)) 
-			
-			left_share = intergenic_seq_diff * (1-fraction_me)
-			print("\t\t\tLeft Neighbour share of BPs: "+str(left_share)) 
-
 			# @LATEST:@TODO:add the shared intergenic positions to the self.me, or directly to file?
 			
-			# @TEST:@DONE: it ^, done: indeed correct orientation found and also correct sharing fractions
+			# @@DONE:TEST:it ^, done: indeed correct orientation found and also correct sharing fractions
 
 		########################
-		# CASE 3: Tail-to-head #
+		# CASE 3: Tail-to-head # ===>....|..===>
 		########################
 
 		if ((self.left["c7_strand"]=="+") and (self.me["c7_strand"]=="+")):
 			print("\t\tTail-to-Head case encountered: 5'===left===>3'...intergenic...5'===me===>3'")
-
-			print("\n\n\n\n Yay I found a tail-to-head \n\n\n\n\n\n")
-
-
-			pdb.set_trace() # @ANDY-and-Luke: python tutorial: how to debug
-
 			## @NOTE: factored out into upper indent: see: @@factored-out-@intergenic_seq_diff
 			#intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
 			#print("\t\t\tNo. intergenic BPs between me and left: "+str(intergenic_seq_diff))
-
 			fraction_me = (2/3) # @DONE: check with Kathrin: 2/3 to 5' or 2/3 to the 3'?	
-			print("\t\t\tFraction of BPs taken by me: "+str(fraction_me)) 
 
-			me_share   = intergenic_seq_diff * fraction_me
-			print("\t\t\tMy share of BPs: "+str(me_share)) 
-
-			left_share = intergenic_seq_diff * (1-fraction_me)
-			print("\t\t\tLeft Neighbour share of BPs: "+str(left_share)) 
-
-			# @TEST: it^i  
-
-
+			# @TODO: me-share as an attribute, later a file writing method deals with the data required to output to either a 3' UTR file or 5' UTR file
+			#me.my_share = me_share  # later the my_share u/ to output 3' and 5' UTR data respectively
+			
 		########################
-		# CASE 4: Head-to-tail #
+		# CASE 4: Head-to-tail # <===..|....<===
 		########################
 
 		if ((self.left["c7_strand"]=="-") and (self.me["c7_strand"]=="-")):
@@ -390,35 +367,57 @@ class gene_and_neighbours(object):
 			#print("\t\t\tNo. intergenic BPs between me and left: "+str(intergenic_seq_diff))
 			
 			fraction_me = (1/3)
-			print("\t\t\tFraction of BPs taken by me: "+str(fraction_me)) 
 
-			me_share = intergeneic_seq_diff * fraction_me 
-			print("\t\t\tMy share of BPs: "+str(me_share)) 
+			# @DONE:@TEST: it^
 
-			left_share = intergenic_seq_diff * (1-fraction_me)
-			print("\t\t\tLeft Neighbour share of BPs: "+str(left_share))
+		#
+		# Calculate fractions of BP to share: me vs. left
+		# ...Using the CASE-specific (1,2,3,4) fraction_me variabl
+		#	
+		me_share   = intergenic_seq_diff * fraction_me
+		left_share = intergenic_seq_diff * (1-fraction_me)
 
-			# @TEST: it^ // @LATEST:2017-03-20-@2225
+		# Summary message
+		print("\t\t\t=================================================")
+		print("\t\t\t|| Me vs. Left sharing successfully completed!! ||")
+		print("\t\t\t=================================================")	
+		print("\t\t\t\tFraction of BPs taken by me: "+str(fraction_me)) 
+		print("\t\t\t\tLeft Neighbour share of BPs: "+str(left_share)) 
+		print("\t\t\t\t-----------------------------------------------")
+		print("\t\t\t\tMy share of BPs: "+str(me_share)) 
+		print("\t\t\t\t -- assigning to self.my_bp_share")
 
 #
 # 3. Create gene objects: (see: @gene_objects, @gff_obj, @gff_i_obj)
 #
-
 
 ## @DONE:@TEST: example case: Tail-to-Tail: 5'(head)===>3'(tail)...|...3'(tail)<===5'(head)..
 # ...All numbers consistent to manually calculated example (./toy.gff)
 #a = gene_and_neighbours( 2 )
 #a.share_neighbouring_seqs()
 
-## @TODO:@TEST: example case: Tail-to-Head: 5'(head)===>3'(tail)..|....5'(head)===>3'(tail)..
+## @DONE:@TEST: example case: Tail-to-Head: 5'(head)===>3'(tail)..|....5'(head)===>3'(tail)..
 
 ## @NOTES:
 # 	-@TODO: catch the error, throw it to use as msg, then skip the error-causing case // @DONE: catch errors, and just "pass" as if error was not there // There are multiple duplicate transcripts, these cause intergeneic_seq_diff to be -ve, we need to catch -ve ones and throw an error
 
 # ...@LATEST-2017-03-06.. @LATEST-2017-03-20
 
-b = gene_and_neighbours( 7 )  # @Q: what does this do // @A: see: gene_and_share
+#b = gene_and_neighbours( 12 )  # LUKE: @Q: what does this do // @A: see: gene_and_share
+#b.share_neighbouring_seqs()
+
+## @DONE:@TEST: example case: Head-to-Tail: 3'(tail)<===5'(head)..|....3'(tail)<===5'(head)
+
+#
+# @DONE:Refactor redundant BP fraction partitioning codes, out of CASE-specific IF statements
+#
+
+# @TODO: create file printing function, it must create a separete file for 5' UTR GFF and 3' UTR GFF separately
+
+
+b = gene_and_neighbours( 12 )  # LUKE: @Q: what does this do // @A: see: gene_and_share
 b.share_neighbouring_seqs()
+
 
 
 # }} 2 alternative 
