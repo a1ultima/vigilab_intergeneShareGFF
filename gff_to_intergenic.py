@@ -1,6 +1,8 @@
 
 import pdb
 
+import copy
+
 """
 
 DEPRECATED: 
@@ -187,6 +189,8 @@ with open("./toy.gff", "r") as fi:
 # Exceptions & Errors (error handling)
 #
 
+# Impossible sequence difference: me vs. left neighbour (usually due to overlapping features)
+
 class IntergenicSeqDiffImpossible(Exception):	
 	""" Base class for exceptions involving negative (-ve) values encountered for..
 		..intergenic_seq_diff variable, we never expect -ve values.
@@ -197,6 +201,61 @@ class IntergenicSeqDiffImpossible(Exception):
 
 class DuplicateFeatureError(IntergenicSeqDiffImpossible):
 	""" Error raised when we think the InterGenicSeqDiffImpossible Exception flags a duplicated feature.
+		
+		Attributes:
+			expression -- input expression in which the error occurred
+			message -- explanation of the error
+	"""
+	
+	# def __init__(self, expression, message):  # @VANILLA:@TODO:later maybe also allow for expression and message, but need to think more about how to work it 
+		#self.expression = expression
+		#self.message = message
+	def __init__(self, message):  # @VANILLA:@TODO:later maybe also allow for expression, but need to think more about how to work it 
+		# @TODO: replace ^ and ^^ (above two lines) to have the following error message instead
+		self.message = message # e.g. something like: "\t"*5+"Me (gene_i=%r) and Left neighbour (gene_i=%r) have a -ve tandem difference in integenic location in BPs (intergenic_seq_diff=%r)... we may be duplicates! Writing to file... \n" % (self.my_id, self.left_id, intergenic_seq_diff)
+		# @DONE: add some error logs to "./log.txt" 
+		with open("./log.txt", "a") as fo_log:
+			fo_log.write(self.message)
+
+# Strand orientation undefined: e.g. if me has strand feild == "." (instead of - or +)
+
+class StrandOrientationUndefined(Exception):	
+	""" Base class for exceptions involving srand the strand field of gffFeatureObj is neither + nor - (-ve) values encountered for..
+
+	"""
+	# @LATEST-2017-03-06:@2033 - @TODO: throw this error class when -ve intergenic_seq_diff occurs in the gene_and_neighbours() class, @TODO: make sure the gene_and_neighbours() class is later consistently capitalised, PEP8	
+	pass
+
+class StrandOrientationError(StrandOrientationUndefined):
+	""" Error raised when the strand field of the gffFeatureObj is neither + nor -
+		
+		Attributes:
+			expression -- input expression in which the error occurred
+			message -- explanation of the error
+	"""
+	
+	# def __init__(self, expression, message):  # @VANILLA:@TODO:later maybe also allow for expression and message, but need to think more about how to work it 
+		#self.expression = expression
+		#self.message = message
+	def __init__(self, message):  # @VANILLA:@TODO:later maybe also allow for expression, but need to think more about how to work it 
+		# @TODO: replace ^ and ^^ (above two lines) to have the following error message instead
+		self.message = message # e.g. something like: "\t"*5+"Me (gene_i=%r) and Left neighbour (gene_i=%r) have a -ve tandem difference in integenic location in BPs (intergenic_seq_diff=%r)... we may be duplicates! Writing to file... \n" % (self.my_id, self.left_id, intergenic_seq_diff)
+		# @DONE: add some error logs to "./log.txt" 
+		with open("./log.txt", "a") as fo_log:
+			fo_log.write(self.message)
+
+# UTR object is neither 5' nor 3'
+
+class UtrObjectUndefined(Exception):	
+	""" Base class for exceptions involving the UTR gffFeature obj being..
+	..neitehr 5' nor 3'
+
+	"""
+	# @LATEST-2017-03-06:@2033 - @TODO: throw this error class when -ve intergenic_seq_diff occurs in the gene_and_neighbours() class, @TODO: make sure the gene_and_neighbours() class is later consistently capitalised, PEP8	
+	pass
+
+class UtrObjectError(UtrObjectUndefined):
+	""" Error raised when the UTR gffFeature obj is undefined
 		
 		Attributes:
 			expression -- input expression in which the error occurred
@@ -236,8 +295,12 @@ def assertNoDuplicateFeatures(intergenic_seq_diff, gffFeatureObj):
 			raise IntergenicSeqDiffImpossible  
 	else:
 		print("\t"*5+"No problems so far...")  # @TODO: so we've dodged the bug
+
+
+# assert UTR-vs-GffFeatureObj BPs consistent, see: "assert"
+
 #
-# Objects
+# Classes ( main object for handling gffFeatureObj )
 #
 
 class gene_and_neighbours(object):
@@ -374,18 +437,102 @@ class gene_and_neighbours(object):
 		# Calculate fractions of BP to share: me vs. left
 		# ...Using the CASE-specific (1,2,3,4) fraction_me variabl
 		#	
-		me_share   = intergenic_seq_diff * fraction_me
-		left_share = intergenic_seq_diff * (1-fraction_me)
+		me_share   = round(intergenic_seq_diff * fraction_me)
+		left_share = round(intergenic_seq_diff * (1-fraction_me))
 
 		# Summary message
 		print("\t\t\t=================================================")
 		print("\t\t\t|| Me vs. Left sharing successfully completed!! ||")
 		print("\t\t\t=================================================")	
-		print("\t\t\t\tFraction of BPs taken by me: "+str(fraction_me)) 
-		print("\t\t\t\tLeft Neighbour share of BPs: "+str(left_share)) 
+		print("\t\t\t\tFraction BPs me:left --> "+str(fraction_me)+":"+str(1-fraction_me)) 
+		print("\t\t\t\t-----------------------------------------------")
+		print("\t\t\t\tLeft Neighbour share of BPs: "+str(left_share))
+		print("\t\t\t\t -- assigning to self.left_bp_share")
 		print("\t\t\t\t-----------------------------------------------")
 		print("\t\t\t\tMy share of BPs: "+str(me_share)) 
 		print("\t\t\t\t -- assigning to self.my_bp_share")
+
+		self.left_bp_share = round(left_share)
+		self.my_bp_share = round(me_share)  # @TODO: figure out if this needs to be copy.copy()'d instead
+
+#
+# Functions
+#
+
+def utrGffFeatureObj_gen( gffFeature ):
+
+	""" Creates two dicts: (i) 5'UTR-intergenicGff [leftwards of self], (ii) 3'UTR-intergenicGff [rightwards of left-neighbour
+
+       	5'(head)==left==>3'(tail)..|....5'(head)==self==>3'(tail)
+
+       	Arg:
+       		- strand (str) -- e.g. "+"
+       		- gffFeatureObj (gene_and_neighbours) -- e.g. b = gene_and_neighbours( 12 ).share_neighbouring_seqs()
+       	Returns:i
+		- left_and_my_UTRs = (leftUtr,myUtr)
+       			- leftUtr   -- see: ASCII diagram
+	       		- myUtr -- see: ASCII diagram
+
+			       \/-UTR-left
+	  (start)==left==(end)[..]|[....](start)==me==(end)
+				     /\-UTR-me
+	"""
+
+	myGff = gffFeature.me
+	leftGff = gffFeature.left
+	myUtr = {}
+	leftUtr = {}
+
+	#
+	# copy keys for common fields between: gffFeatureObj vs. gffFeatureObj intergene
+	#	
+	# ...turn into function later: def copyGffObjKeys(gffFeatureObj): return gffFeatureObj_intergene
+	for key in myGff.keys():
+		myUtr[key]=copy.copy(myGff[key])
+		leftUtr[key]=copy.copy(leftGff[key])
+
+	########## start  end
+	# UTR-me #  |[....]
+	##########
+
+       	#   \/intergene-start = gffGene_start  - self.my_bp_share (+1?)      
+       	#   |-----(head)5'UTR==me==>3'UTR(tail)-----
+       	#        /\intergene-end = gffGene_start (-1?)
+
+	myUtr["c4_start"]= round(myGff["c4_start"] - gffFeature.my_bp_share + 1)  # @TODO:we actually do +1? or not needed?
+	myUtr["c5_end"]  = round(myGff["c4_start"] - 1) # @TODO:we actually do -1? or not needed?
+
+	if myGff["c7_strand"]=="+":
+		myUtr["c9_attributes"]	= "5-UTR intergenic region ; "+myGff["c9_attributes"]
+	elif myGff["c7_strand"]=="-":
+		myUtr["c9_attributes"]	= "3-UTR intergenic region ; "+myGff["c9_attributes"]
+	else:
+		err_strand_msg = "\t\tOOPS! A gffFeature row does not have a strand orientation! Please delete it from input file and try again"+str(myGff)
+		raise StrandOrientationError(err_strand_msg)
+
+	############ start  end
+	# UTR-left #	 [..]|
+	############	
+	
+	#                               \/intergene-start = gffGene_start  - self.my_bp_share (+1?)      
+	#   (head)5'UTR=left=>3'UTR(tail)-----|
+	#                                     /\intergene-end = gffGene_start (-1?)
+
+	leftUtr["c4_start"]	=round(leftGff["c5_end"] + 1)  # @TODO:we actually do +1? or not needed?
+	leftUtr["c5_end"] 	=round(leftGff["c5_end"] + gffFeature.left_bp_share + 1) # @TODO:we actually do +1? or not needed?
+
+	if leftGff["c7_strand"]=="+":
+		leftUtr["c9_attributes"]	= "3-UTR intergenic region ; "+leftGff["c9_attributes"]
+	elif leftGff["c7_strand"]=="-":
+		leftUtr["c9_attributes"]	= "5-UTR intergenic region ; "+leftGff["c9_attributes"]
+	else:
+		err_strand_msg = "\t\tOOPS! A gffFeature row does not have a strand orientation! Please delete it from input file and try again"+str(myGff)
+		raise StrandOrientationError(err_strand_msg)
+
+	# @LATEST:@2017-03-24: after knowing strand orientation via IFs, need to print to files	
+	left_and_my_UTRs = (leftUtr,myUtr)  # bundle UTRs
+
+	return left_and_my_UTRs
 
 #
 # 3. Create gene objects: (see: @gene_objects, @gff_obj, @gff_i_obj)
@@ -412,12 +559,71 @@ class gene_and_neighbours(object):
 # @DONE:Refactor redundant BP fraction partitioning codes, out of CASE-specific IF statements
 #
 
-# @TODO: create file printing function, it must create a separete file for 5' UTR GFF and 3' UTR GFF separately
+# @TODO: create file writing function, it must create a separete file for 5' UTR GFF and 3' UTR GFF separately
 
 
 b = gene_and_neighbours( 12 )  # LUKE: @Q: what does this do // @A: see: gene_and_share
 b.share_neighbouring_seqs()
 
+
+#with open("./intergene_5UTR.gff") as fi_5utr, open("./intergene_3UTR.gff") as fi_3UTR:
+
+#
+# 4. Generate UTR objects from GffFeatureObj (formerly: gene_and_neighbour)
+#
+
+print("\t\tGenerating UTR .gff objects from me and left neighbour...")
+
+b_leftUtr, b_myUtr = utrGffFeatureObj_gen(b) # utrGffFeatureObj_gen(gffFeature)
+
+print("\t\t\tChecking for bugs...")
+
+assert (b_leftUtr['c5_end']-b_leftUtr['c4_start'])==b.left_bp_share
+
+print("\t\t\t~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+print("\t\t\t| Me vs. Left UTRs successfully created!! |")
+print("\t\t\t~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
+#
+# 5. Write intergenic UTR .gff Objects to files: utr5.gff vs. utr3.gff
+#
+
+
+gffFeatureObj_vec = []  # @TODO: populate the vec.append(b) // @LATEST:@2017-03-25
+
+with open('utr3.gff','w') as fo_utr5, open('utr5.gff','w') as fo_utr3:
+
+	for b_leftUtr,b_myUtr in gffFeatureObj_vec: 
+
+
+		#
+		# @TODO: write fields of b_leftUtr, b_myUtr to files...
+		#
+
+		if "5-UTR intergenic region " in b_leftUtr["c9_attributes"]:
+			fo_utr5.write("...field1...")
+			fo_utr5.write("...field2...")
+			# etc.
+		elif "3-UTR intergenic region " in b_leftUtr["c9_attributes"]:	
+			fo_utr3.write("...field1...")
+			fo_utr3.write("...field2...")
+			# etc.
+		else:
+			err_strand_msg = "\t\tOOPS! leftUtr is either 5' nor 3', sorry..."
+			raise UtrObjectError(err_strand_msg)
+
+		
+		if "5-UTR intergenic region " in b_myUtr["c9_attributes"]:
+			fo_utr5.write("...field1...")
+			fo_utr5.write("...field2...")
+			# etc.
+		elif "3-UTR intergenic region " in b_myUtr["c9_attributes"]:	
+			fo_utr3.write("...field1...")
+			fo_utr3.write("...field2...")
+			# etc.
+		else:
+			err_strand_msg = "\t\tOOPS! leftUtr is either 5' nor 3', sorry..."
+			raise UtrObjectError(err_strand_msg)
 
 
 # }} 2 alternative 
