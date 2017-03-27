@@ -189,6 +189,16 @@ with open("./toy.gff", "r") as fi:
 # Exceptions & Errors (error handling)
 #
 
+
+# No left neighbour (start of chromosome exception)
+
+class NoLeftNeighbour(Exception):
+	""" Base class for exceptions involving edge case, where the gene_i has no..
+		..leftward neighbour, due to it being the closest to: START-CHR...==me==...
+
+	"""
+	pass
+
 # Impossible sequence difference: me vs. left neighbour (usually due to overlapping features)
 
 class IntergenicSeqDiffImpossible(Exception):	
@@ -338,10 +348,25 @@ class gene_and_neighbours(object):
 		# @TODO: catch the edge case, where gene 1 has no left neighbour, and gene n has no right neighbour
 		# @TODO: deal with the cases where there are multiple chromosomes! 
 
+		#
+		# Is gene_i at the furthest left-edge of the chromosome?
+		#
 		if (gene_i-1) == 0:
+			#
+			# YES..	
+			# ..Copy the field data from gene_i, and set fields accordingly
+			#
 			print("Gene to the left of gene_i="+str(gene_i)+" does not exist, since gene_i is the furthest left in the chromosome, setting to None...")
-			self.left = None
+			
+			self.left = copy.deepcopy(gene_to_field[gene_i])
+			self.left["c4_start"] = 0
+			self.left["c5_end"] = 0 # @TODO:or maybe it should = 1?
+			self.left["c9_attributes"] = "START CHROMOSOME ; "+self.left["c9_attributes"]
 		else:
+			#
+			# NO..
+			# ..Assign self.left as the [gene_i - 1]'th gene
+			# 
 			self.left = gene_to_field[gene_i-1]
 		
 		## @DONE: no need to parse the right-neighbour, remove
@@ -359,10 +384,13 @@ class gene_and_neighbours(object):
 
 		print("\t\tAttempting to share sequences between me (a.me) and my leftward neighbour...")
 
-		if self.left==None:
-			# @TODO: make sure to deal with left-edge case
-			print("\t\t\tOops, looks like we have no left neighbour!")
-			pdb.set_trace()
+		# @TODO:test the new self.left assignment for left-chr edge case @2017-03-27-@0143
+		#if self.left==None:
+		#	# @TODO: make sure to deal with left-edge case
+		#	print("\t\t\tOops, looks like we have no left neighbour! skipping...")
+		#	raise(NoLeftNeighbour)
+			
+			
 	
 		# @Note:@@factored-out-@intergenic_seq_diff: two reasons: (i) catch intergenic_seq_diff == -ve value errors, and (ii) reduce code redundancy, 
 		intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
@@ -538,89 +566,128 @@ def utrGffFeatureObj_gen( gffFeature ):
 # 3. Create gene objects: (see: @gene_objects, @gff_obj, @gff_i_obj)
 #
 
-## @DONE:@TEST: example case: Tail-to-Tail: 5'(head)===>3'(tail)...|...3'(tail)<===5'(head)..
-# ...All numbers consistent to manually calculated example (./toy.gff)
-#a = gene_and_neighbours( 2 )
-#a.share_neighbouring_seqs()
 
-## @DONE:@TEST: example case: Tail-to-Head: 5'(head)===>3'(tail)..|....5'(head)===>3'(tail)..
 
-## @NOTES:
-# 	-@TODO: catch the error, throw it to use as msg, then skip the error-causing case // @DONE: catch errors, and just "pass" as if error was not there // There are multiple duplicate transcripts, these cause intergeneic_seq_diff to be -ve, we need to catch -ve ones and throw an error
+gene_i_vec = [i+1 for i in range(len(gene_to_field.keys()))] # e.g. [1,2,...18]
 
-# ...@LATEST-2017-03-06.. @LATEST-2017-03-20
+gffUtr_pairs = []
 
-#b = gene_and_neighbours( 12 )  # LUKE: @Q: what does this do // @A: see: gene_and_share
-#b.share_neighbouring_seqs()
+for i in gene_i_vec:
 
-## @DONE:@TEST: example case: Head-to-Tail: 3'(tail)<===5'(head)..|....3'(tail)<===5'(head)
+	## @DONE:@TEST: example case: Tail-to-Tail: 5'(head)===>3'(tail)...|...3'(tail)<===5'(head)..
+	# ...All numbers consistent to manually calculated example (./toy.gff)
+	#a = gene_and_neighbours( 2 )
+	#a.share_neighbouring_seqs()
+	
+	## @DONE:@TEST: example case: Tail-to-Head: 5'(head)===>3'(tail)..|....5'(head)===>3'(tail)..
+	
+	## @NOTES:
+	# 	-@TODO: catch the error, throw it to use as msg, then skip the error-causing case // @DONE: catch errors, and just "pass" as if error was not there // There are multiple duplicate transcripts, these cause intergeneic_seq_diff to be -ve, we need to catch -ve ones and throw an error
+	
+	# ...@LATEST-2017-03-06.. @LATEST-2017-03-20
+	
+	#b = gene_and_neighbours( 12 )  # LUKE: @Q: what does this do // @A: see: gene_and_share
+	#b.share_neighbouring_seqs()
+	
+	## @DONE:@TEST: example case: Head-to-Tail: 3'(tail)<===5'(head)..|....3'(tail)<===5'(head)
+	
+	#
+	# @DONE:Refactor redundant BP fraction partitioning codes, out of CASE-specific IF statements
+	#
+	
+	# @TODO: create file writing function, it must create a separete file for 5' UTR GFF and 3' UTR GFF separately
+		
+	#b = gene_and_neighbours( 12 )  # LUKE: @Q: what does this do // @A: see: gene_and_share
+	#b.share_neighbouring_seqs()
+	
+
+	#
+	# If the gene_i a left-edge case?
+	#
+	try:
+		#
+		# NO.. 	 
+		# ..If gene_i is not the left-edge case, i.e. is not leftmost 
+		# ..gffFeature on a given chromosome
+		gffFeature_pair = gene_and_neighbours( i ) # parse gene_i (self.me) and gene_i - 1 (self.left) gffField data
+		gffFeature_pair.share_neighbouring_seqs()  # share intergenic region: gene_i (self.me) vs. gene_i - 1 (self.left)
+	except NoLeftNeighbour:
+		# YES..
+		# ..If gene_i is the left edge case then we only have self.me
+		# @TODO:@LATEST:@2017-03-27-@0127
+		pdb.set_trace()
+	
+
+	#
+	# 4. Generate UTR objects from GffFeatureObj (formerly: gene_and_neighbour)
+	#
+	
+	print("\t\tGenerating UTR .gff objects from me and left neighbour...")
+	
+	#   leftUtr\/   \/myUtr
+	# ==left==[...|...]
+
+	gffFeature_leftUtr, gffFeature_myUtr = utrGffFeatureObj_gen(gffFeature_pair) # utrGffFeatureObj_gen(gffFeature)
+	
+	print("\t\t\tChecking for bugs...")
+	
+	assert ((gffFeature_myUtr['c5_end']-gffFeature_myUtr['c4_start'])==gffFeature_pair.my_bp_share)
+	assert ((gffFeature_leftUtr['c5_end']-gffFeature_leftUtr['c4_start'])==gffFeature_pair.left_bp_share)
+	
+	print("\t\t\t~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+	print("\t\t\t| Me vs. Left UTRs successfully created!! |")
+	print("\t\t\t~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+	
+	gffUtr_pairs.append((gffFeature_leftUtr, gffFeature_myUtr))	
+
 
 #
-# @DONE:Refactor redundant BP fraction partitioning codes, out of CASE-specific IF statements
+# 5. Collect all input file's gffFeatureObjs into a list: gffFeatureObj_vec
 #
 
-# @TODO: create file writing function, it must create a separete file for 5' UTR GFF and 3' UTR GFF separately
 
 
-b = gene_and_neighbours( 12 )  # LUKE: @Q: what does this do // @A: see: gene_and_share
-b.share_neighbouring_seqs()
-
-
-#with open("./intergene_5UTR.gff") as fi_5utr, open("./intergene_3UTR.gff") as fi_3UTR:
-
-#
-# 4. Generate UTR objects from GffFeatureObj (formerly: gene_and_neighbour)
-#
-
-print("\t\tGenerating UTR .gff objects from me and left neighbour...")
-
-b_leftUtr, b_myUtr = utrGffFeatureObj_gen(b) # utrGffFeatureObj_gen(gffFeature)
-
-print("\t\t\tChecking for bugs...")
-
-assert (b_leftUtr['c5_end']-b_leftUtr['c4_start'])==b.left_bp_share
-
-print("\t\t\t~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-print("\t\t\t| Me vs. Left UTRs successfully created!! |")
-print("\t\t\t~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 #
 # 5. Write intergenic UTR .gff Objects to files: utr5.gff vs. utr3.gff
 #
 
-
-gffFeatureObj_vec = []  # @TODO: populate the vec.append(b) // @LATEST:@2017-03-25
+print("Writing UTR3.gff and UTR5.gff files so far...")
 
 with open('utr3.gff','w') as fo_utr5, open('utr5.gff','w') as fo_utr3:
 
-	for b_leftUtr,b_myUtr in gffFeatureObj_vec: 
-
+	for i_leftUtr,i_myUtr in gffUtr_pairs: 
 
 		#
 		# @TODO: write fields of b_leftUtr, b_myUtr to files...
 		#
 
 		if "5-UTR intergenic region " in b_leftUtr["c9_attributes"]:
-			fo_utr5.write("...field1...")
-			fo_utr5.write("...field2...")
+			
+			#fo_utr5.write("...field1...")
+			#fo_utr5fo_utr5.write("...field2...")
 			# etc.
+			pdb.set_trace()
 		elif "3-UTR intergenic region " in b_leftUtr["c9_attributes"]:	
-			fo_utr3.write("...field1...")
-			fo_utr3.write("...field2...")
+			#fo_utr3.write("...field1...")
+			#fo_utr3.write("...field2...")
 			# etc.
+			pass
 		else:
 			err_strand_msg = "\t\tOOPS! leftUtr is either 5' nor 3', sorry..."
 			raise UtrObjectError(err_strand_msg)
 
 		
 		if "5-UTR intergenic region " in b_myUtr["c9_attributes"]:
-			fo_utr5.write("...field1...")
-			fo_utr5.write("...field2...")
+			#fo_utr5.write("...field1...")
+			#fo_utr5.write("...field2...")
 			# etc.
+			pass
 		elif "3-UTR intergenic region " in b_myUtr["c9_attributes"]:	
-			fo_utr3.write("...field1...")
-			fo_utr3.write("...field2...")
+			#fo_utr3.write("...field1...")
+			#fo_utr3.write("...field2...")
 			# etc.
+			pass
 		else:
 			err_strand_msg = "\t\tOOPS! leftUtr is either 5' nor 3', sorry..."
 			raise UtrObjectError(err_strand_msg)
