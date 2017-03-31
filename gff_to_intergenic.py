@@ -1,7 +1,7 @@
 
 import pdb
-
 import copy
+import math
 
 """
 
@@ -287,7 +287,7 @@ class UtrObjectError(UtrObjectUndefined):
 #
 def assertNoDuplicateFeatures(intergenic_seq_diff, gffFeatureObj):
 	""" Error Handling Function for checking whether or not an encounter with -ve intergenic_seq_diff values is caused specifically by duplicate features..
-		..e.g. "transcript", where the "start" and "end" fields are equal.
+		..e.g. "transcript", where the "start" and "end" fields are equal or overlapping.
 
 	ARG:
 		- gffFeatureObj (class) -- e.g. a = gene_and_neighbours() class instance
@@ -333,7 +333,9 @@ class gene_and_neighbours(object):
 		
 		""" Parse the field data attributed to a single gene, and also its left/right neighbours (@TODO: do we keep this in the same file as the gene_to_field parser?) """
 
-		print("\tGene_i: "+str(gene_i))
+		print("\t.............")
+		print("\t. Gene_i: "+str(gene_i)+" .")
+		print("\t.............")
 		print("\t\tCreating myself (a.me) and my leftward neighbour (a.left)...")
 		
 		#
@@ -356,12 +358,20 @@ class gene_and_neighbours(object):
 			# YES..	
 			# ..Copy the field data from gene_i, and set fields accordingly
 			#
-			print("Gene to the left of gene_i="+str(gene_i)+" does not exist, since gene_i is the furthest left in the chromosome, setting to None...")
+			print("\t\t\tGene to the left of gene_i="+str(gene_i)+" does not exist, since gene_i is the furthest left...")
 			
 			self.left = copy.deepcopy(gene_to_field[gene_i])
-			self.left["c4_start"] = 0
-			self.left["c5_end"] = 0 # @TODO:or maybe it should = 1?
+			self.left["c4_start"] 	= 0
+			self.left["c5_end"] 	= 0 # @TODO:or maybe it should = 1?
 			self.left["c9_attributes"] = "START CHROMOSOME ; "+self.left["c9_attributes"]
+
+			# reverse strand orientation for sensible START prefixing
+			if self.left["c7_strand"]=="+":
+				self.left["c7_strand"] = "-"
+			elif self.left["c7_strand"]=="-":
+				self.left["c7_strand"] = "+"
+			else:
+				raise(StrandOrientationError)
 		else:
 			#
 			# NO..
@@ -389,9 +399,6 @@ class gene_and_neighbours(object):
 		#	# @TODO: make sure to deal with left-edge case
 		#	print("\t\t\tOops, looks like we have no left neighbour! skipping...")
 		#	raise(NoLeftNeighbour)
-			
-			
-	
 		# @Note:@@factored-out-@intergenic_seq_diff: two reasons: (i) catch intergenic_seq_diff == -ve value errors, and (ii) reduce code redundancy, 
 		intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
 		print("\t\t\tTotal No. intergenic BPs between me's START field and left's END field: "+str(intergenic_seq_diff))
@@ -412,54 +419,64 @@ class gene_and_neighbours(object):
 			print("\t"*5+"...Skipping gene_i: %r" % gene_i)
 			pass  # @TODO: better to skip it // instead of skipping, it currently: carries on processing as if no err was encountered
 
-		# @DONE: @LATEST-2017-03-06-1900: we factored out the intergenic_seq_diff
 
-		#############################################
-		# CASE 1 & 2: Tail-to-Tail and Head-to-Head #  ===>...|...<=== OR <===...|...===>
-		#############################################
-
-		# Share seqs with left, Head-to-head (1/2 each), tail-to-tail (2/3 each)
-		# @TODO: can reduce code by doing an IF strand directions are not the same then share 50:50 ...
-		if ((self.left["c7_strand"]=="+") and (self.me["c7_strand"]=="-")) or ((self.left["c7_strand"]=="-") and (self.me["c7_strand"]=="+")):
-			print("\t\tHead-to-Head (or Tail-to-Tail) case encountered: 5'===left===>3'......3'<===me===5'")	
-			# @TODO: I assume the gff convention is to name the left-most chromosome pos as 0
-			## @NOTE: factored out into upper indent: see: @@factored-out-@intergenic_seq_diff
-			#intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
-			#print("\t\t\tNo. intergenic BPs between me and left: "+str(intergenic_seq_diff))
-			fraction_me = (1/2)
+		if self.left["c5_end"] == 0:
 			
-			# @LATEST:@TODO:add the shared intergenic positions to the self.me, or directly to file?
+			######################################
+			# CASE 0: CHROMOSOME_START EDGE CASE # START....==me==
+			######################################
 			
-			# @@DONE:TEST:it ^, done: indeed correct orientation found and also correct sharing fractions
-
-		########################
-		# CASE 3: Tail-to-head # ===>....|..===>
-		########################
-
-		if ((self.left["c7_strand"]=="+") and (self.me["c7_strand"]=="+")):
-			print("\t\tTail-to-Head case encountered: 5'===left===>3'...intergenic...5'===me===>3'")
-			## @NOTE: factored out into upper indent: see: @@factored-out-@intergenic_seq_diff
-			#intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
-			#print("\t\t\tNo. intergenic BPs between me and left: "+str(intergenic_seq_diff))
-			fraction_me = (2/3) # @DONE: check with Kathrin: 2/3 to 5' or 2/3 to the 3'?	
-
-			# @TODO: me-share as an attribute, later a file writing method deals with the data required to output to either a 3' UTR file or 5' UTR file
-			#me.my_share = me_share  # later the my_share u/ to output 3' and 5' UTR data respectively
+			print("\t\tCHROMOSOME_START edge case encountered: START...==me==")
+			fraction_me = 1
 			
-		########################
-		# CASE 4: Head-to-tail # <===..|....<===
-		########################
+		else:
 
-		if ((self.left["c7_strand"]=="-") and (self.me["c7_strand"]=="-")):
-			print("\t\tHead-to-Tail case encountered: 3'<===left===5'...intergenic...3'<===me===5'")
-
-			## @NOTE: factored out into upper indent: see: @@factored-out-@intergenic_seq_diff
-			#intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
-			#print("\t\t\tNo. intergenic BPs between me and left: "+str(intergenic_seq_diff))
-			
-			fraction_me = (1/3)
-
-			# @DONE:@TEST: it^
+			# @DONE: @LATEST-2017-03-06-1900: we factored out the intergenic_seq_diff
+	
+			#############################################
+			# CASE 1 & 2: Tail-to-Tail and Head-to-Head #  ===>...|...<=== OR <===...|...===>
+			#############################################
+	
+			# Share seqs with left, Head-to-head (1/2 each), tail-to-tail (2/3 each)
+			# @TODO: can reduce code by doing an IF strand directions are not the same then share 50:50 ...
+			if ((self.left["c7_strand"]=="+") and (self.me["c7_strand"]=="-")) or ((self.left["c7_strand"]=="-") and (self.me["c7_strand"]=="+")):
+				print("\t\tHead-to-Head (or Tail-to-Tail) case encountered: 5'===left===>3'......3'<===me===5'")	
+				# @TODO: I assume the gff convention is to name the left-most chromosome pos as 0
+				## @NOTE: factored out into upper indent: see: @@factored-out-@intergenic_seq_diff
+				#intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
+				#print("\t\t\tNo. intergenic BPs between me and left: "+str(intergenic_seq_diff))
+				fraction_me = (1/2)
+				
+				# @LATEST:@TODO:add the shared intergenic positions to the self.me, or directly to file?
+				
+				# @@DONE:TEST:it ^, done: indeed correct orientation found and also correct sharing fractions
+	
+			########################
+			# CASE 3: Tail-to-head # ===>....|..===>
+			########################
+	
+			if ((self.left["c7_strand"]=="+") and (self.me["c7_strand"]=="+")):
+				print("\t\tTail-to-Head case encountered: 5'===left===>3'...intergenic...5'===me===>3'")
+				## @NOTE: factored out into upper indent: see: @@factored-out-@intergenic_seq_diff
+				#intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
+				#print("\t\t\tNo. intergenic BPs between me and left: "+str(intergenic_seq_diff))
+				fraction_me = (2/3) # @DONE: check with Kathrin: 2/3 to 5' or 2/3 to the 3'?	
+	
+				# @TODO: me-share as an attribute, later a file writing method deals with the data required to output to either a 3' UTR file or 5' UTR file
+				#me.my_share = me_share  # later the my_share u/ to output 3' and 5' UTR data respectively
+				
+			########################
+			# CASE 4: Head-to-tail # <===..|....<===
+			########################
+	
+			if ((self.left["c7_strand"]=="-") and (self.me["c7_strand"]=="-")):
+				print("\t\tHead-to-Tail case encountered: 3'<===left===5'...intergenic...3'<===me===5'")
+	
+				## @NOTE: factored out into upper indent: see: @@factored-out-@intergenic_seq_diff
+				#intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
+				#print("\t\t\tNo. intergenic BPs between me and left: "+str(intergenic_seq_diff))
+				fraction_me = (1/3)
+				# @DONE:@TEST: it^
 
 		#
 		# Calculate fractions of BP to share: me vs. left
@@ -469,10 +486,10 @@ class gene_and_neighbours(object):
 		left_share = round(intergenic_seq_diff * (1-fraction_me))
 
 		# Summary message
-		print("\t\t\t=================================================")
+		print("\t\t\t==================================================")
 		print("\t\t\t|| Me vs. Left sharing successfully completed!! ||")
-		print("\t\t\t=================================================")	
-		print("\t\t\t\tFraction BPs me:left --> "+str(fraction_me)+":"+str(1-fraction_me)) 
+		print("\t\t\t==================================================")	
+		print("\t\t\t\tFraction BPs left:me --> "+str(1-fraction_me)+":"+str(fraction_me)) 
 		print("\t\t\t\t-----------------------------------------------")
 		print("\t\t\t\tLeft Neighbour share of BPs: "+str(left_share))
 		print("\t\t\t\t -- assigning to self.left_bp_share")
@@ -506,9 +523,9 @@ def utrGffFeatureObj_gen( gffFeature ):
 				     /\-UTR-me
 	"""
 
-	myGff = gffFeature.me
+	myGff 	= gffFeature.me
 	leftGff = gffFeature.left
-	myUtr = {}
+	myUtr 	= {}
 	leftUtr = {}
 
 	#
@@ -527,8 +544,10 @@ def utrGffFeatureObj_gen( gffFeature ):
        	#   |-----(head)5'UTR==me==>3'UTR(tail)-----
        	#        /\intergene-end = gffGene_start (-1?)
 
-	myUtr["c4_start"]= round(myGff["c4_start"] - gffFeature.my_bp_share + 1)  # @TODO:we actually do +1? or not needed?
-	myUtr["c5_end"]  = round(myGff["c4_start"] - 1) # @TODO:we actually do -1? or not needed?
+	#myUtr["c4_start"]= round(copy.copy(myGff["c4_start"]) - gffFeature.my_bp_share)  # @TODO:we actually do +1? or not needed?
+	#myUtr["c5_end"]  = round(copy.copy(myGff["c4_start"]) - 1 ) # @TODO:we actually do -1? or not needed?
+	myUtr["c4_start"]= math.ceil(copy.copy(myGff["c4_start"]) - gffFeature.my_bp_share)  # @TODO:we actually do +1? or not needed?
+	myUtr["c5_end"]  = math.ceil(copy.copy(myGff["c4_start"])) # @TODO:we actually do -1? or not needed?
 
 	if myGff["c7_strand"]=="+":
 		myUtr["c9_attributes"]	= "5-UTR intergenic region ; "+myGff["c9_attributes"]
@@ -542,13 +561,15 @@ def utrGffFeatureObj_gen( gffFeature ):
 	# UTR-left #	 [..]|
 	############	
 	
-	#                               \/intergene-start = gffGene_start  - self.my_bp_share (+1?)      
+	#                               \/intergene-start = gffGene_start - self.my_bp_share (+1?)      
 	#   (head)5'UTR=left=>3'UTR(tail)-----|
 	#                                     /\intergene-end = gffGene_start (-1?)
 
-	leftUtr["c4_start"]	=round(leftGff["c5_end"] + 1)  # @TODO:we actually do +1? or not needed?
-	leftUtr["c5_end"] 	=round(leftGff["c5_end"] + gffFeature.left_bp_share + 1) # @TODO:we actually do +1? or not needed?
-
+	#leftUtr["c4_start"]	=round(copy.copy(leftGff["c5_end"]) + 1)  # @TODO:we actually do +1? or not needed?
+	#leftUtr["c5_end"] 	=round(copy.copy(leftUtr["c4_start"]) + gffFeature.left_bp_share + 1) # @TODO:we actually do +1? or not needed?
+	leftUtr["c4_start"] =math.floor(copy.copy(leftGff["c5_end"]))  # @TODO:we actually do +1? or not needed?
+	leftUtr["c5_end"]   =math.floor(copy.copy(leftUtr["c4_start"]) + gffFeature.left_bp_share) # @TODO:we actually do +1? or not needed?
+	
 	if leftGff["c7_strand"]=="+":
 		leftUtr["c9_attributes"]	= "3-UTR intergenic region ; "+leftGff["c9_attributes"]
 	elif leftGff["c7_strand"]=="-":
@@ -566,9 +587,8 @@ def utrGffFeatureObj_gen( gffFeature ):
 # 3. Create gene objects: (see: @gene_objects, @gff_obj, @gff_i_obj)
 #
 
-
-
-gene_i_vec = [i+1 for i in range(len(gene_to_field.keys()))] # e.g. [1,2,...18]
+gene_i_vec 	= [i+1 for i in range(len(gene_to_field.keys()))] # e.g. [1,2,...18]
+gene_i_vec.pop(0) # get rid of the left-edge case, @TODO: but fix it later 50% done
 
 gffUtr_pairs = []
 
@@ -600,7 +620,6 @@ for i in gene_i_vec:
 	#b = gene_and_neighbours( 12 )  # LUKE: @Q: what does this do // @A: see: gene_and_share
 	#b.share_neighbouring_seqs()
 	
-
 	#
 	# If the gene_i a left-edge case?
 	#
@@ -616,82 +635,23 @@ for i in gene_i_vec:
 		# ..If gene_i is the left edge case then we only have self.me
 		# @TODO:@LATEST:@2017-03-27-@0127
 		pdb.set_trace()
-	
 
 	#
 	# 4. Generate UTR objects from GffFeatureObj (formerly: gene_and_neighbour)
 	#
-	
 	print("\t\tGenerating UTR .gff objects from me and left neighbour...")
 	
-	#   leftUtr\/   \/myUtr
-	# ==left==[...|...]
-
-	gffFeature_leftUtr, gffFeature_myUtr = utrGffFeatureObj_gen(gffFeature_pair) # utrGffFeatureObj_gen(gffFeature)
+	gff_leftUtr, gff_myUtr = utrGffFeatureObj_gen(gffFeature_pair) # utrGffFeatureObj_gen(gffFeature)
 	
 	print("\t\t\tChecking for bugs...")
 	
-	assert ((gffFeature_myUtr['c5_end']-gffFeature_myUtr['c4_start'])==gffFeature_pair.my_bp_share)
-	assert ((gffFeature_leftUtr['c5_end']-gffFeature_leftUtr['c4_start'])==gffFeature_pair.left_bp_share)
+	assert (gff_leftUtr['c5_end']-gff_leftUtr['c4_start'])==gffFeature_pair.left_bp_share
+	assert (gff_myUtr['c5_end']-gff_myUtr['c4_start'])==gffFeature_pair.my_bp_share
 	
 	print("\t\t\t~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 	print("\t\t\t| Me vs. Left UTRs successfully created!! |")
 	print("\t\t\t~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-	
-	gffUtr_pairs.append((gffFeature_leftUtr, gffFeature_myUtr))	
-
-
-#
-# 5. Collect all input file's gffFeatureObjs into a list: gffFeatureObj_vec
-#
-
-
-
-
-#
-# 5. Write intergenic UTR .gff Objects to files: utr5.gff vs. utr3.gff
-#
-
-print("Writing UTR3.gff and UTR5.gff files so far...")
-
-with open('utr3.gff','w') as fo_utr5, open('utr5.gff','w') as fo_utr3:
-
-	for i_leftUtr,i_myUtr in gffUtr_pairs: 
-
-		#
-		# @TODO: write fields of b_leftUtr, b_myUtr to files...
-		#
-
-		if "5-UTR intergenic region " in b_leftUtr["c9_attributes"]:
-			
-			#fo_utr5.write("...field1...")
-			#fo_utr5fo_utr5.write("...field2...")
-			# etc.
-			pdb.set_trace()
-		elif "3-UTR intergenic region " in b_leftUtr["c9_attributes"]:	
-			#fo_utr3.write("...field1...")
-			#fo_utr3.write("...field2...")
-			# etc.
-			pass
-		else:
-			err_strand_msg = "\t\tOOPS! leftUtr is either 5' nor 3', sorry..."
-			raise UtrObjectError(err_strand_msg)
-
-		
-		if "5-UTR intergenic region " in b_myUtr["c9_attributes"]:
-			#fo_utr5.write("...field1...")
-			#fo_utr5.write("...field2...")
-			# etc.
-			pass
-		elif "3-UTR intergenic region " in b_myUtr["c9_attributes"]:	
-			#fo_utr3.write("...field1...")
-			#fo_utr3.write("...field2...")
-			# etc.
-			pass
-		else:
-			err_strand_msg = "\t\tOOPS! leftUtr is either 5' nor 3', sorry..."
-			raise UtrObjectError(err_strand_msg)
-
-
+				
+	#@TODO:@LATEST:2017-03-
 # }} 2 alternative 
 
