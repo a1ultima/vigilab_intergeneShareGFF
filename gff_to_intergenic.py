@@ -333,9 +333,9 @@ class gene_and_neighbours(object):
 		
 		""" Parse the field data attributed to a single gene, and also its left/right neighbours (@TODO: do we keep this in the same file as the gene_to_field parser?) """
 
-		print("\t.............")
+		print("\t..........")
 		print("\t. Gene_i: "+str(gene_i)+" .")
-		print("\t.............")
+		print("\t..........")
 		print("\t\tCreating myself (a.me) and my leftward neighbour (a.left)...")
 		
 		#
@@ -571,9 +571,9 @@ def utrGffFeatureObj_gen( gffFeature ):
 	leftUtr["c5_end"]   =math.floor(copy.copy(leftUtr["c4_start"]) + gffFeature.left_bp_share) # @TODO:we actually do +1? or not needed?
 	
 	if leftGff["c7_strand"]=="+":
-		leftUtr["c9_attributes"]	= "3-UTR intergenic region ; "+leftGff["c9_attributes"]
+		leftUtr["c9_attributes"] = "3-UTR intergenic region ; "+leftGff["c9_attributes"]
 	elif leftGff["c7_strand"]=="-":
-		leftUtr["c9_attributes"]	= "5-UTR intergenic region ; "+leftGff["c9_attributes"]
+		leftUtr["c9_attributes"] = "5-UTR intergenic region ; "+leftGff["c9_attributes"]
 	else:
 		err_strand_msg = "\t\tOOPS! A gffFeature row does not have a strand orientation! Please delete it from input file and try again"+str(myGff)
 		raise StrandOrientationError(err_strand_msg)
