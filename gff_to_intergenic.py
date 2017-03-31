@@ -621,15 +621,37 @@ for i in gene_i_vec:
 	#b.share_neighbouring_seqs()
 	
 	#
-	# If the gene_i a left-edge case?
+	# Is the gene_i a left-edge case?
 	#
 	try:
 		#
 		# NO.. 	 
 		# ..If gene_i is not the left-edge case, i.e. is not leftmost 
 		# ..gffFeature on a given chromosome
-		gffFeature_pair = gene_and_neighbours( i ) # parse gene_i (self.me) and gene_i - 1 (self.left) gffField data
-		gffFeature_pair.share_neighbouring_seqs()  # share intergenic region: gene_i (self.me) vs. gene_i - 1 (self.left)
+
+
+		#
+		# Is the gene_i on a new chromosome? 
+		#
+
+		try:
+
+			#
+			# NO..
+			# ..If the gene_i is not on a new chromosome, then it
+			# ..can handle its leftward neighbour as normal
+			#
+			gffFeature_pair = gene_and_neighbours( i ) # parse gene_i (self.me) and gene_i - 1 (self.left) gffField data
+			gffFeature_pair.share_neighbouring_seqs()  # share intergenic region: gene_i (self.me) vs. gene_i - 1 (self.left)
+		except IntergenicSeqDiffImpossible:
+			#
+			# YES..
+			# ..If the gene_i is on a new chromosome, then we skip it
+			# ..since there is no leftward neighbour (gene_i - 1)
+			#	
+			continue			
+
+
 	except NoLeftNeighbour:
 		# YES..
 		# ..If gene_i is the left edge case then we only have self.me
