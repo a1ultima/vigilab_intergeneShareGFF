@@ -1,7 +1,7 @@
 
 import pdb
+
 import copy
-import math
 
 """
 
@@ -287,7 +287,7 @@ class UtrObjectError(UtrObjectUndefined):
 #
 def assertNoDuplicateFeatures(intergenic_seq_diff, gffFeatureObj):
 	""" Error Handling Function for checking whether or not an encounter with -ve intergenic_seq_diff values is caused specifically by duplicate features..
-		..e.g. "transcript", where the "start" and "end" fields are equal or overlapping.
+		..e.g. "transcript", where the "start" and "end" fields are equal.
 
 	ARG:
 		- gffFeatureObj (class) -- e.g. a = gene_and_neighbours() class instance
@@ -333,9 +333,7 @@ class gene_and_neighbours(object):
 		
 		""" Parse the field data attributed to a single gene, and also its left/right neighbours (@TODO: do we keep this in the same file as the gene_to_field parser?) """
 
-		print("\t.............")
-		print("\t. Gene_i: "+str(gene_i)+" .")
-		print("\t.............")
+		print("\tGene_i: "+str(gene_i))
 		print("\t\tCreating myself (a.me) and my leftward neighbour (a.left)...")
 		
 		#
@@ -361,8 +359,8 @@ class gene_and_neighbours(object):
 			print("\t\t\tGene to the left of gene_i="+str(gene_i)+" does not exist, since gene_i is the furthest left...")
 			
 			self.left = copy.deepcopy(gene_to_field[gene_i])
-			self.left["c4_start"] 	= 0
-			self.left["c5_end"] 	= 0 # @TODO:or maybe it should = 1?
+			self.left["c4_start"] = -1
+			self.left["c5_end"] = -1 # @TODO:or maybe it should = 1?
 			self.left["c9_attributes"] = "START CHROMOSOME ; "+self.left["c9_attributes"]
 
 			# reverse strand orientation for sensible START prefixing
@@ -399,6 +397,9 @@ class gene_and_neighbours(object):
 		#	# @TODO: make sure to deal with left-edge case
 		#	print("\t\t\tOops, looks like we have no left neighbour! skipping...")
 		#	raise(NoLeftNeighbour)
+			
+			
+	
 		# @Note:@@factored-out-@intergenic_seq_diff: two reasons: (i) catch intergenic_seq_diff == -ve value errors, and (ii) reduce code redundancy, 
 		intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
 		print("\t\t\tTotal No. intergenic BPs between me's START field and left's END field: "+str(intergenic_seq_diff))
@@ -420,15 +421,17 @@ class gene_and_neighbours(object):
 			pass  # @TODO: better to skip it // instead of skipping, it currently: carries on processing as if no err was encountered
 
 
-		if self.left["c5_end"] == 0:
+
+		if self.left["c5_end"] == -1:
 			
 			######################################
 			# CASE 0: CHROMOSOME_START EDGE CASE # START....==me==
 			######################################
 			
 			print("\t\tCHROMOSOME_START edge case encountered: START...==me==")
-			fraction_me = 1
-			
+
+			fraction_me = 1.0
+
 		else:
 
 			# @DONE: @LATEST-2017-03-06-1900: we factored out the intergenic_seq_diff
@@ -475,7 +478,9 @@ class gene_and_neighbours(object):
 				## @NOTE: factored out into upper indent: see: @@factored-out-@intergenic_seq_diff
 				#intergenic_seq_diff = self.me["c4_start"] - self.left["c5_end"]  # @TODO: code repetition, can factor out
 				#print("\t\t\tNo. intergenic BPs between me and left: "+str(intergenic_seq_diff))
+				
 				fraction_me = (1/3)
+	
 				# @DONE:@TEST: it^
 
 		#
@@ -485,10 +490,12 @@ class gene_and_neighbours(object):
 		me_share   = round(intergenic_seq_diff * fraction_me)
 		left_share = round(intergenic_seq_diff * (1-fraction_me))
 
+		#pdb.set_trace()
+
 		# Summary message
-		print("\t\t\t==================================================")
+		print("\t\t\t=================================================")
 		print("\t\t\t|| Me vs. Left sharing successfully completed!! ||")
-		print("\t\t\t==================================================")	
+		print("\t\t\t=================================================")	
 		print("\t\t\t\tFraction BPs left:me --> "+str(1-fraction_me)+":"+str(fraction_me)) 
 		print("\t\t\t\t-----------------------------------------------")
 		print("\t\t\t\tLeft Neighbour share of BPs: "+str(left_share))
@@ -523,9 +530,9 @@ def utrGffFeatureObj_gen( gffFeature ):
 				     /\-UTR-me
 	"""
 
-	myGff 	= gffFeature.me
+	myGff = gffFeature.me
 	leftGff = gffFeature.left
-	myUtr 	= {}
+	myUtr = {}
 	leftUtr = {}
 
 	#
@@ -544,10 +551,8 @@ def utrGffFeatureObj_gen( gffFeature ):
        	#   |-----(head)5'UTR==me==>3'UTR(tail)-----
        	#        /\intergene-end = gffGene_start (-1?)
 
-	#myUtr["c4_start"]= round(copy.copy(myGff["c4_start"]) - gffFeature.my_bp_share)  # @TODO:we actually do +1? or not needed?
-	#myUtr["c5_end"]  = round(copy.copy(myGff["c4_start"]) - 1 ) # @TODO:we actually do -1? or not needed?
-	myUtr["c4_start"]= math.ceil(copy.copy(myGff["c4_start"]) - gffFeature.my_bp_share)  # @TODO:we actually do +1? or not needed?
-	myUtr["c5_end"]  = math.ceil(copy.copy(myGff["c4_start"])) # @TODO:we actually do -1? or not needed?
+	myUtr["c4_start"]= round(copy.copy(myGff["c4_start"]) - gffFeature.my_bp_share + 1)  # @TODO:we actually do +1? or not needed?
+	myUtr["c5_end"]  = round(copy.copy(myGff["c4_start"]) - 1) # @TODO:we actually do -1? or not needed?
 
 	if myGff["c7_strand"]=="+":
 		myUtr["c9_attributes"]	= "5-UTR intergenic region ; "+myGff["c9_attributes"]
@@ -561,15 +566,13 @@ def utrGffFeatureObj_gen( gffFeature ):
 	# UTR-left #	 [..]|
 	############	
 	
-	#                               \/intergene-start = gffGene_start - self.my_bp_share (+1?)      
+	#                               \/intergene-start = gffGene_start  - self.my_bp_share (+1?)      
 	#   (head)5'UTR=left=>3'UTR(tail)-----|
 	#                                     /\intergene-end = gffGene_start (-1?)
 
-	#leftUtr["c4_start"]	=round(copy.copy(leftGff["c5_end"]) + 1)  # @TODO:we actually do +1? or not needed?
-	#leftUtr["c5_end"] 	=round(copy.copy(leftUtr["c4_start"]) + gffFeature.left_bp_share + 1) # @TODO:we actually do +1? or not needed?
-	leftUtr["c4_start"] =math.floor(copy.copy(leftGff["c5_end"]))  # @TODO:we actually do +1? or not needed?
-	leftUtr["c5_end"]   =math.floor(copy.copy(leftUtr["c4_start"]) + gffFeature.left_bp_share) # @TODO:we actually do +1? or not needed?
-	
+	leftUtr["c4_start"]=round(copy.copy(leftGff["c5_end"]) + 1)  # @TODO:we actually do +1? or not needed?
+	leftUtr["c5_end"]  =round(copy.copy(leftUtr["c4_start"]) + gffFeature.left_bp_share) # @TODO:we actually do +1? or not needed?
+
 	if leftGff["c7_strand"]=="+":
 		leftUtr["c9_attributes"]	= "3-UTR intergenic region ; "+leftGff["c9_attributes"]
 	elif leftGff["c7_strand"]=="-":
@@ -587,8 +590,7 @@ def utrGffFeatureObj_gen( gffFeature ):
 # 3. Create gene objects: (see: @gene_objects, @gff_obj, @gff_i_obj)
 #
 
-gene_i_vec 	= [i+1 for i in range(len(gene_to_field.keys()))] # e.g. [1,2,...18]
-gene_i_vec.pop(0) # get rid of the left-edge case, @TODO: but fix it later 50% done
+gene_i_vec = [i+1 for i in range(len(gene_to_field.keys()))] # e.g. [1,2,...18]
 
 gffUtr_pairs = []
 
@@ -619,7 +621,7 @@ for i in gene_i_vec:
 		
 	#b = gene_and_neighbours( 12 )  # LUKE: @Q: what does this do // @A: see: gene_and_share
 	#b.share_neighbouring_seqs()
-	
+
 	#
 	# If the gene_i a left-edge case?
 	#
@@ -639,18 +641,20 @@ for i in gene_i_vec:
 	#
 	# 4. Generate UTR objects from GffFeatureObj (formerly: gene_and_neighbour)
 	#
+	
 	print("\t\tGenerating UTR .gff objects from me and left neighbour...")
 	
 	gff_leftUtr, gff_myUtr = utrGffFeatureObj_gen(gffFeature_pair) # utrGffFeatureObj_gen(gffFeature)
 	
 	print("\t\t\tChecking for bugs...")
-	
+
 	assert (gff_leftUtr['c5_end']-gff_leftUtr['c4_start'])==gffFeature_pair.left_bp_share
 	assert (gff_myUtr['c5_end']-gff_myUtr['c4_start'])==gffFeature_pair.my_bp_share
 	
 	print("\t\t\t~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 	print("\t\t\t| Me vs. Left UTRs successfully created!! |")
 	print("\t\t\t~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
 				
 	#@TODO:@LATEST:2017-03-
 # }} 2 alternative 
