@@ -570,8 +570,8 @@ def utrGffFeatureObj_gen( gffFeature ):
 	#   (head)5'UTR=left=>3'UTR(tail)-----|
 	#                                     /\intergene-end = gffGene_start (-1?)
 
-	leftUtr["c4_start"]=round(copy.copy(leftGff["c5_end"]) + 1)  # @TODO:we actually do +1? or not needed?
-	leftUtr["c5_end"]  =round(copy.copy(leftUtr["c4_start"]) + gffFeature.left_bp_share) # @TODO:we actually do +1? or not needed?
+	leftUtr["c4_start"]	=round(copy.copy(leftGff["c5_end"]) + 1)  # @TODO:we actually do +1? or not needed?
+	leftUtr["c5_end"] 	=round(copy.copy(leftUtr["c4_start"]) + gffFeature.left_bp_share) # @TODO:we actually do +1? or not needed?
 
 	if leftGff["c7_strand"]=="+":
 		leftUtr["c9_attributes"]	= "3-UTR intergenic region ; "+leftGff["c9_attributes"]
@@ -589,6 +589,8 @@ def utrGffFeatureObj_gen( gffFeature ):
 #
 # 3. Create gene objects: (see: @gene_objects, @gff_obj, @gff_i_obj)
 #
+
+
 
 gene_i_vec = [i+1 for i in range(len(gene_to_field.keys()))] # e.g. [1,2,...18]
 
@@ -621,6 +623,7 @@ for i in gene_i_vec:
 		
 	#b = gene_and_neighbours( 12 )  # LUKE: @Q: what does this do // @A: see: gene_and_share
 	#b.share_neighbouring_seqs()
+	
 
 	#
 	# If the gene_i a left-edge case?
@@ -637,6 +640,7 @@ for i in gene_i_vec:
 		# ..If gene_i is the left edge case then we only have self.me
 		# @TODO:@LATEST:@2017-03-27-@0127
 		pdb.set_trace()
+	
 
 	#
 	# 4. Generate UTR objects from GffFeatureObj (formerly: gene_and_neighbour)
@@ -648,6 +652,7 @@ for i in gene_i_vec:
 	
 	print("\t\t\tChecking for bugs...")
 
+	
 	assert (gff_leftUtr['c5_end']-gff_leftUtr['c4_start'])==gffFeature_pair.left_bp_share
 	assert (gff_myUtr['c5_end']-gff_myUtr['c4_start'])==gffFeature_pair.my_bp_share
 	
@@ -655,7 +660,7 @@ for i in gene_i_vec:
 	print("\t\t\t| Me vs. Left UTRs successfully created!! |")
 	print("\t\t\t~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
-				
-	#@TODO:@LATEST:2017-03-
+		
+
 # }} 2 alternative 
 
