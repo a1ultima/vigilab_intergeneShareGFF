@@ -125,7 +125,7 @@ gene_i = 0
 
 # Reading file buffer...
 
-with open("./toy.gff", "r") as fi:
+with open("./PbANKA_genes_input_Andy.txt", "r") as fi:
 
 	print("Reading GFF file into: gene_to_field (dict), index as such: gene_to_field[gene_i], where gene_i is between 1-to-n...")
 	
@@ -138,7 +138,7 @@ with open("./toy.gff", "r") as fi:
 		
 		line_split = line.split("\t")
 
-		if line_split[2] != "transcript":
+		if line_split[2] != "gene":
 			continue
 
 		#c1_reference_seq = line_split[0] # e.g. 'scaffold_150' 
@@ -158,13 +158,14 @@ with open("./toy.gff", "r") as fi:
 		#	print("oops")
 		#	print("\t"+str(line_split[5])+"___"+str(float(line_split[5])))
 
+
 		gene_to_field[gene_i] = { \
 			"c1_reference_seq":line_split[0],# e.g. 'scaffold_150' \
 			"c2_source":line_split[1],# e.g. 'GWSUNI' \
 			"c3_type":line_split[2],# e.g. 'transcript' \
 			"c4_start":int(line_split[3]),# e.g. '1372' \
 			"c5_end":int(line_split[4]),# e.g. '2031' \
-			"c6_score":float(line_split[5]),# e.g. '45.89' \
+			"c6_score":line_split[5],# e.g. '45.89' \
 			"c7_strand":line_split[6],# e.g. '+' \
 			"c8_phase":line_split[7],# e.g. '.' @Note: codon frame (0,1,2) \
 			"c9_attributes":line_split[8]# e.g. <see @gff3.md> \
@@ -651,7 +652,6 @@ for i in gene_i_vec:
 			#	
 			continue			
 
-
 	except NoLeftNeighbour:
 		# YES..
 		# ..If gene_i is the left edge case then we only have self.me
@@ -673,7 +673,80 @@ for i in gene_i_vec:
 	print("\t\t\t~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 	print("\t\t\t| Me vs. Left UTRs successfully created!! |")
 	print("\t\t\t~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-				
-	#@TODO:@LATEST:2017-03-
+
+	#@TODO:@LATEST:2017-03- make some files
+	
+	gffUtr_pairs.append( (gff_leftUtr, gff_myUtr) )
+
+#
+# 5. Write intergenic UTR .gff objects to files: utr5.gff vs. utr3.gff
+#
+
+print("Writing UTR3.gff and UTR5.gff files so far...")
+
+with open("utr3.gff", "w") as fo_utr3, open("utr5.gff", "w") as fo_utr5:
+
+	for left, my in gffUtr_pairs:
+
+		left_row ="\t".join([
+		left['c1_reference_seq'],
+		left['c2_source'],
+		left['c3_type'],
+		str(left['c4_start']),
+		str(left['c5_end']),
+		str(left['c6_score']),
+		left['c7_strand'],
+		left['c8_phase'],
+		left['c9_attributes']])
+
+		my_row ="\t".join([
+		my['c1_reference_seq'],
+		my['c2_source'],
+		my['c3_type'],
+		str(my['c4_start']),
+		str(my['c5_end']),
+		str(my['c6_score']),
+		my['c7_strand'],
+		my['c8_phase'],
+		my['c9_attributes']])
+
+		utr5_tag = "5-UTR intergenic region ; "
+		utr3_tag = "3-UTR intergenic region ; "
+
+		if utr5_tag in left["c9_attributes"]:
+			fo_utr5.write(left_row.replace(utr5_tag,"")+"\n")
+		elif utr3_tag in left["c9_attributes"]:
+			fo_utr3.write(left_row.replace(utr3_tag,"")+"\n")
+		else:
+			err_strand_msg = "\t\tOOPS!! LeftUtr is neither 5'UTR nor 3'UTR objects..."
+			raise UtrObjectError(err_strand_msg)
+			
+		if utr5_tag in my["c9_attributes"]:
+			fo_utr5.write(my_row.replace(utr5_tag,"")+"\n")
+		elif utr3_tag in my["c9_attributes"]:
+			fo_utr3.write(my_row.replace(utr3_tag,"")+"\n")
+		else:
+			err_strand_msg = "\t\tOOPS!! myUtr is neither 5'UTR nor 3'UTR objects..."
+			raise UtrObjectError(err_strand_msg)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # }} 2 alternative 
 
